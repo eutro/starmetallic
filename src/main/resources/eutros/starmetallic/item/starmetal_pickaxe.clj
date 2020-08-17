@@ -1,4 +1,4 @@
-(ns eutros.starmetallic.item.pickaxe
+(ns eutros.starmetallic.item.starmetal-pickaxe
   (:import (net.minecraft.item PickaxeItem
                                Item$Properties
                                IItemTier

@@ -1,4 +1,4 @@
-(ns eutros.starmetallic.item.sword
+(ns eutros.starmetallic.item.starmetal-sword
   (:import (net.minecraft.item SwordItem
                                Item$Properties
                                IItemTier

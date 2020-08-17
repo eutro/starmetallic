@@ -1,120 +1,63 @@
 (ns eutros.starmetallic.lib.specific-proxy
-  (:import [java.lang.reflect Modifier]
-           [clojure.asm ClassWriter ClassVisitor Opcodes Type]
-           [clojure.lang
-            IProxy
-            Reflector
-            DynamicClassLoader
-            IPersistentMap
-            PersistentHashMap
-            RT]
-           [clojure.asm.commons Method GeneratorAdapter])
+  (:import (java.lang.reflect Modifier)
+           (clojure.asm ClassWriter ClassVisitor Opcodes Type)
+           (clojure.lang IProxy
+                         IPersistentMap
+                         RT)
+           (clojure.asm.commons Method GeneratorAdapter))
   (:use [clojure.string :only [join]]
-        eutros.starmetallic.lib.type-hints))
-
-(defn- get-super-and-interfaces [bases]
-  "Copied"
-  (if (.isInterface ^Class (first bases))
-    [Object bases]
-    [(first bases) (next bases)]))
-
-(defn- check-method
-  [^java.lang.reflect.Method method]
-  (let [mods (.getModifiers method)]
-    (if-not
-      (and
-       (not
-        (or (Modifier/isPublic mods)
-            (Modifier/isProtected mods)))
-       (Modifier/isStatic mods)
-       (Modifier/isFinal mods)
-       (= "finalize" (.getName method)))
-      method)))
-
-(defn- get-target-method
-  [super
-   interfaces
-   given-name
-   params]
-  (let [param-classes (into-array (map get-type-hint params))
-        name          (str (eval given-name))]
-    (or
-     (loop [^Class cls super]
-       (if cls
-         (or
-          (try (check-method (.getDeclaredMethod cls name param-classes))
-            (catch NoSuchMethodException e nil))
-          (some
-           #(try (check-method (.getMethod ^Class % name param-classes))
-             (catch NoSuchMethodException e nil))
-           (.getInterfaces cls))
-          (recur (.getSuperclass cls)))
-         nil))
-     (some
-      #(try (check-method (.getMethod ^Class % name param-classes))
-        (catch NoSuchMethodException e nil))
-      interfaces)
-     (throw
-       (NoSuchMethodException.
-         (str name
-              "("
-              (join ", "
-                    (map #(.getName ^Class %)
-                         param-classes))
-              ")"))))))
+        eutros.starmetallic.lib.type-hints
+        eutros.starmetallic.lib.class-gen))
 
 (defmacro sproxy
-  [class-and-interfaces
-   args
-   &
-   fs]
-  (let [bases                      (map
-                                    #(or (eval %)
-                                      (throw (Exception. (str "Can't evaluate: " %))))
-                                    class-and-interfaces)
-        [^Class super interfaces]  (get-super-and-interfaces bases)
-        classes                    (cons super interfaces)
-        constructor-classes        (map get-type-hint args)
-        constructor                (let [ctr
-                                         (.getDeclaredConstructor super
-                                                                  (into-array constructor-classes))]
-                                     (if (-> (.getModifiers ctr)
-                                             (Modifier/isPrivate))
-                                       (throw
-                                         (NoSuchMethodException.
-                                           (str (.getName super)
-                                                "<init>("
-                                                (join ", "
-                                                      (map #(.getName ^Class %)
-                                                           constructor-classes))
-                                                ")")))
-                                       ctr))
+  [class-and-interfaces args & fs]
+  (let [[^Class super interfaces]
+        (get-super-and-interfaces
+         (map
+          #(or (eval %)
+            (throw (Exception. (str "Can't evaluate: " %))))
+          class-and-interfaces))
+        classes             (cons super interfaces)
+        constructor-classes (map get-type-hint args)
+        constructor         (let [ctr
+                                  (.getDeclaredConstructor super
+                                                           (into-array constructor-classes))]
+                              (if (-> (.getModifiers ctr)
+                                      (Modifier/isPrivate))
+                                (throw
+                                  (NoSuchMethodException.
+                                    (str (.getName super)
+                                         "<init>("
+                                         (join ", "
+                                               (map #(.getName ^Class %)
+                                                    constructor-classes))
+                                         ")")))
+                                ctr))
         target-methods
         (map
-         #(get-target-method super interfaces (first %) (second %))
+         #(get-target-method
+           super
+           interfaces
+           (-> (first %)
+               eval
+               str)
+           (->> (second %)
+                (map get-type-hint)
+                into-array))
          fs)
 
-        cv                         (ClassWriter. ClassWriter/COMPUTE_MAXS)
-        pname                      (proxy-name super interfaces)
-        cname                      (.replace pname \. \/)
-        ctype                      (Type/getObjectType cname)
-        iname                      (fn [^Class c]
-                                     (.. Type
-                                         (getType c)
-                                         (getInternalName)))
-        fmap                       "__clojureFnMap"
-        totype                     (fn [^Class c] (Type/getType c))
-        to-types                   (fn [cs]
-                                     (if (pos? (count cs))
-                                       (into-array (map totype cs))
-                                       (make-array Type 0)))
-        super-type                 ^Type (totype super)
-        imap-type                  ^Type (totype IPersistentMap)
-        ifn-type                   (totype clojure.lang.IFn)
-        obj-type                   (totype Object)
-        sym-type                   (totype clojure.lang.Symbol)
-        rt-type                    (totype clojure.lang.RT)
-        ex-type                    (totype java.lang.UnsupportedOperationException)]
+        cv                  (ClassWriter. ClassWriter/COMPUTE_MAXS)
+        pname               (proxy-name super interfaces)
+        cname               (.replace pname \. \/)
+        ctype               (Type/getObjectType cname)
+        fmap                "__clojureFnMap"
+        super-type          ^Type (to-type super)
+        imap-type           ^Type (to-type IPersistentMap)
+        ifn-type            (to-type clojure.lang.IFn)
+        obj-type            (to-type Object)
+        sym-type            (to-type clojure.lang.Symbol)
+        rt-type             (to-type clojure.lang.RT)
+        ex-type             (to-type java.lang.UnsupportedOperationException)]
 
     ;; start class definition
     (.visit cv
@@ -139,21 +82,19 @@
 
     ;; add methods
     (doseq [^java.lang.reflect.Method meth target-methods]
-      (let [rtype    ^Type (totype (.getReturnType meth))
+      (let [rtype    ^Type (to-type (.getReturnType meth))
             pclasses (.getParameterTypes meth)
             ptypes   (to-types pclasses)
             m        (Method. (.getName meth)
                               rtype
                               ptypes)
-            gen      (GeneratorAdapter. Opcodes/ACC_PUBLIC m nil nil cv)
 
             sm       (Method. (str "s$" (.getName meth))
                               rtype
-                              ptypes)
-            sgen     (GeneratorAdapter. Opcodes/ACC_PUBLIC sm nil nil cv)]
+                              ptypes)]
 
-        ;; call super
-        (doto sgen
+        ;; super invoker
+        (doto (GeneratorAdapter. Opcodes/ACC_PUBLIC sm nil nil cv)
               (.visitCode)
 
               (.loadThis)
@@ -167,7 +108,8 @@
               (.returnValue)
               (.endMethod))
 
-        (doto gen
+        ;; binding invoker
+        (doto (GeneratorAdapter. Opcodes/ACC_PUBLIC m nil nil cv)
               (.visitCode)
 
               ;; load and invoke bindings
@@ -231,9 +173,9 @@
             (.loadThis)
             (.dup)
             (.getField ctype fmap imap-type)
-            (.checkCast (totype clojure.lang.IPersistentCollection))
+            (.checkCast (to-type clojure.lang.IPersistentCollection))
             (.loadArgs)
-            (.invokeInterface (totype clojure.lang.IPersistentCollection)
+            (.invokeInterface (to-type clojure.lang.IPersistentCollection)
                               (Method/getMethod "clojure.lang.IPersistentCollection cons(Object)"))
             (.checkCast imap-type)
             (.putField ctype fmap imap-type)
@@ -250,11 +192,7 @@
 
     (.visitEnd cv)
 
-    (let [pclass
-          (.defineClass ^DynamicClassLoader (deref clojure.lang.Compiler/LOADER)
-                        pname
-                        (.toByteArray cv)
-                        [super interfaces])]
+    (let [pclass (define-class pname (.toByteArray cv) super interfaces)]
       `(let [p# (new ~(symbol pname) ~@args)]
         (init-proxy p#
                     ~(loop [fmap {}

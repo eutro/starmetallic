@@ -1,4 +1,4 @@
-(ns eutros.starmetallic.item.axe
+(ns eutros.starmetallic.item.starmetal-axe
   (:import (net.minecraft.item AxeItem
                                Item$Properties
                                IItemTier

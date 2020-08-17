@@ -1,20 +1,13 @@
 (ns eutros.starmetallic.Starmetallic
-  (:import net.minecraftforge.fml.common.Mod
-           net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext
-           java.io.InputStreamReader
-           [org.apache.logging.log4j
-            Logger
-            LogManager]
-           [net.minecraftforge.registries
-            DeferredRegister
-            ForgeRegistries]
-           net.minecraft.item.crafting.Ingredient
+  (:import java.io.InputStreamReader
            java.util.function.Supplier
-           [net.minecraft.item
-            Item
-            SwordItem
-            Item$Properties
-            IItemTier]))
+           net.minecraftforge.fml.common.Mod
+           net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext
+           net.minecraft.item.IItemTier
+           net.minecraft.item.crafting.Ingredient
+           (net.minecraftforge.registries DeferredRegister
+                                          ForgeRegistries)
+           org.apache.logging.log4j.LogManager))
 
 (set! *warn-on-reflection* true)
 
@@ -33,17 +26,23 @@
     (DeferredRegister/create ForgeRegistries/ITEMS
                              ^String MODID))
 
-  (defn register-item [name]
-    (.register ^DeferredRegister ITEMS
-               (str "starmetal_" name)
+  (def ENTITIES
+    (DeferredRegister/create ForgeRegistries/ENTITIES
+                             ^String MODID))
+
+  (defn register [^DeferredRegister registry path]
+    (.register registry
+               (name path)
                (reify
                 Supplier
                 (get [_]
                      (with-open [iostream (.. (Thread/currentThread)
                                               (getContextClassLoader)
-                                              (getResourceAsStream (str "/eutros/starmetallic/item/" name ".clj")))]
+                                              (getResourceAsStream (str "/eutros/starmetallic/" path ".clj")))]
                        (-> (InputStreamReader. iostream)
-                           (load-reader)))))))
+                           (Compiler/load (str "eutros/starmetallic/" path ".clj")
+                                          (-> (name path)
+                                              (str ".clj")))))))))
 
   (def LOGGER (LogManager/getLogger "Starmetallic"))
 
@@ -57,11 +56,14 @@
      (getEnchantability [_] 40)
      (getRepairMaterial [_] Ingredient/EMPTY)))
 
-  (register-item "sword")
-  (register-item "axe")
-  (register-item "pickaxe"))
+  (register ITEMS 'item/starmetal_sword)
+  (register ITEMS 'item/starmetal_axe)
+  (register ITEMS 'item/starmetal_pickaxe)
+
+  (register ENTITIES 'entity/starlight_burst))
 
 (defn -post-init [this]
   (let [mod-bus (-> (FMLJavaModLoadingContext/get)
                     (.getModEventBus))]
-    (.register ^DeferredRegister ITEMS mod-bus)))
+    (.register ^DeferredRegister ITEMS mod-bus)
+    (.register ^DeferredRegister ENTITIES mod-bus)))

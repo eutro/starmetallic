@@ -1,5 +1,3 @@
-import dev.clojurephant.plugin.clojure.ClojureBuild
-
 buildscript {
     repositories {
         maven { url = 'https://files.minecraftforge.net/maven' }

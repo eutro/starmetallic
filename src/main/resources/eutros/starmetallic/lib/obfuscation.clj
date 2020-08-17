@@ -42,6 +42,6 @@
           (!f form))))
 
 (defmacro !!
-  "Like the macro '.. but using '!! instead of '."
+  "Like the macro '.. but using '! instead of '."
   ([x form] `(! ~x ~form))
-  ([x form & more] `(!! (. ~x ~form) ~@more)))
+  ([x form & more] `(!! (! ~x ~form) ~@more)))
