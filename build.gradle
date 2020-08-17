@@ -1,0 +1,158 @@
+import dev.clojurephant.plugin.clojure.ClojureBuild
+
+buildscript {
+    repositories {
+        maven { url = 'https://files.minecraftforge.net/maven' }
+        jcenter()
+        mavenCentral()
+    }
+    dependencies {
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '3.+', changing: true
+    }
+}
+plugins {
+    id "com.wynprice.cursemaven" version "2.1.5"
+    id "dev.clojurephant.clojure" version "0.6.0-alpha.4"
+}
+apply plugin: 'net.minecraftforge.gradle'
+// Only edit below this line, the above code adds and enables the necessary things for Forge to be setup.
+apply plugin: 'eclipse'
+apply plugin: 'maven-publish'
+
+version = "${phase}-${mc_version}-${major}.${minor}.${patch}"
+group = 'eutros.starmetallic' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
+archivesBaseName = 'starmetallic'
+
+sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8' // Need this here so eclipse task generates correctly.
+//Print out JVM information so that we know what version is running. Extreamly useful for people to know when helping you.
+println('Java: ' + System.getProperty('java.version') + ' JVM: ' + System.getProperty('java.vm.version') + '(' + System.getProperty('java.vendor') + ') Arch: ' + System.getProperty('os.arch'))
+
+minecraft {
+    // The mappings can be changed at any time, and must be in the following format.
+    // snapshot_YYYYMMDD   Snapshot are built nightly.
+    // stable_#            Stables are built at the discretion of the MCP team.
+    // Use non-default mappings at your own risk. they may not always work.
+    // Simply re-run your setup task after changing the mappings to update your workspace.
+    mappings channel: 'snapshot', version: '20200514-1.15.1'
+    // makeObfSourceJar = false // an Srg named sources jar is made by default. uncomment this to disable.
+
+    // accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
+
+    // Default run configurations.
+    // These can be tweaked, removed, or duplicated as needed.
+    runs {
+        client {
+            workingDirectory project.file('run')
+
+            // Recommended logging data for a userdev environment
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+
+            // Recommended logging level for the console
+            property 'forge.logging.console.level', 'debug'
+
+            mods {
+                starmetallic {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        server {
+            workingDirectory project.file('run')
+
+            // Recommended logging data for a userdev environment
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+
+            // Recommended logging level for the console
+            property 'forge.logging.console.level', 'debug'
+
+            args 'nogui'
+
+            mods {
+                starmetallic {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        data {
+            workingDirectory project.file('run')
+
+            // Recommended logging data for a userdev environment
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+
+            // Recommended logging level for the console
+            property 'forge.logging.console.level', 'debug'
+
+            args '--mod', 'starmetallic', '--all', '--output', file('src/generated/resources/')
+
+            mods {
+                starmetallic {
+                    source sourceSets.main
+                }
+            }
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        name = 'clojars'
+        url = 'https://repo.clojars.org'
+    }
+    maven {
+        name = "curios"
+        url = "https://maven.theillusivec4.top/"
+    }
+    maven {
+        name = "jei"
+        url = "https://dvs1.progwml6.com/files/maven"
+    }
+    maven {
+        name = "jei_fallback"
+        url = "https://modmaven.k-4u.nl"
+    }
+}
+
+dependencies {
+    minecraft 'net.minecraftforge:forge:1.15.2-31.2.36'
+    implementation 'org.clojure:clojure:1.10.0'
+
+    compileOnly fg.deobf("mezz.jei:jei-${mc_version}:${jei_ver}:api")
+    runtimeOnly fg.deobf("mezz.jei:jei-${mc_version}:${jei_ver}")
+
+    compileOnly fg.deobf("top.theillusivec4.curios:curios:FORGE-${mc_version}-${curios_ver}:api")
+    runtimeOnly fg.deobf("top.theillusivec4.curios:curios:FORGE-${mc_version}-${curios_ver}")
+
+    implementation fg.deobf("curse.maven:observerlib:${observer_lib_file}")
+    implementation fg.deobf("curse.maven:astralsorcery:${astral_file}")
+}
+
+// Example for how to get properties into the manifest for reading by the runtime..
+jar {
+    manifest {
+        attributes([
+                "Specification-Title"     : "starmetallic",
+                "Specification-Vendor"    : "Eutro",
+                "Specification-Version"   : "1", // We are version 1 of ourselves
+                "Implementation-Title"    : archivesBaseName,
+                "Implementation-Version"  : "${project.version}",
+                "Implementation-Vendor"   : "Eutro",
+                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        ])
+    }
+}
+
+jar.finalizedBy('reobfJar')
+
+clojure {
+    builds {
+        main {
+            aotAll()
+            setReflection("fail")
+        }
+    }
+}
+
+checkClojure.enabled = false
