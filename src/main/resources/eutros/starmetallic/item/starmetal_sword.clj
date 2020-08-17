@@ -74,15 +74,15 @@
   [^PlayerEntity player]
   (when
     (and
-      (check-stack
-        (! player
-           (func_184614_ca ;; getHeldItemMainhand
-             )))
-      (=
-        (! player
-           (func_184825_o ;; getCooledAttackStrength
-            0))
-        1.))
+     (check-stack
+      (! player
+         (func_184614_ca ;; getHeldItemMainhand
+           )))
+     (=
+      (! player
+         (func_184825_o ;; getCooledAttackStrength
+          0))
+      1.))
     (as-> (->EntityBurst player) $
           (!! player
               field_70170_p ;; world
@@ -104,12 +104,15 @@
         field_70170_p ;; world
         (func_184148_a ;; playSound
          ^PlayerEntity (identity nil)
-         (! player func_226277_ct_ ;; getPosX
-            )
-         (! player func_226278_cu_ ;; getPosY
-            )
-         (! player func_226281_cx_ ;; getPosZ
-            )
+         (! player
+            (func_226277_ct_ ;; getPosX
+              ))
+         (! player
+            (func_226278_cu_ ;; getPosY
+              ))
+         (! player
+            (func_226281_cx_ ;; getPosZ
+              ))
          SoundsAS/ILLUMINATION_WAND_LIGHT
          SoundCategory/PLAYERS
          0.4

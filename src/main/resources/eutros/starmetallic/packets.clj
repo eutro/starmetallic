@@ -1,6 +1,7 @@
 (ns eutros.starmetallic.packets
   (:import net.minecraftforge.fml.network.NetworkRegistry
            net.minecraft.util.ResourceLocation
+           net.minecraftforge.fml.network.simple.SimpleChannel
            (java.util.function Supplier Predicate BiConsumer Function))
   (:use eutros.starmetallic.Starmetallic))
 
@@ -23,7 +24,7 @@
 
 (def ^:dynamic burst-handler nil)
 
-(.registerMessage CHANNEL
+(.registerMessage ^SimpleChannel CHANNEL
                   1
                   PacketBurst
                   (reify ;; encoder

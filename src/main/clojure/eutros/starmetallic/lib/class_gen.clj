@@ -1,5 +1,5 @@
 (ns eutros.starmetallic.lib.class-gen
-  (:import (java.lang.reflect Method Field Modifier)
+  (:import (java.lang.reflect Method Field Modifier Member)
            (clojure.lang DynamicClassLoader)
            clojure.asm.Type)
   (:use [clojure.string :only [join]]))
@@ -23,7 +23,7 @@
       (getType c)
       (getInternalName)))
 
-(defn- check-method
+(defn check-overridable
   [^Method method]
   (let [mods (.getModifiers method)]
     (if-not
@@ -35,8 +35,8 @@
        (Modifier/isFinal mods))
       method)))
 
-(defn- check-field
-  [^Field field]
+(defn check-visible
+  [^Member field]
   (let [mods (.getModifiers field)]
     (if
       (or (Modifier/isPublic mods)
@@ -48,29 +48,27 @@
   (loop [^Class cls super]
     (if cls
       (or
-        (try (check-field (.getDeclaredField cls name))
-          (catch NoSuchMethodException e nil))
-        (recur (.getSuperclass cls)))
+       (try (check-visible (.getDeclaredField cls name))
+         (catch NoSuchMethodException e nil))
+       (recur (.getSuperclass cls)))
       (throw (NoSuchFieldException. name)))))
 
 (defn get-target-method
-  [super interfaces
-   name
-   param-classes]
+  [method-filter super interfaces name param-classes]
   (or
    (loop [^Class cls super]
      (if cls
        (or
-        (try (check-method (.getDeclaredMethod cls name param-classes))
+        (try (method-filter (.getDeclaredMethod cls name param-classes))
           (catch NoSuchMethodException e nil))
         (some
-         #(try (check-method (.getMethod ^Class % name param-classes))
+         #(try (method-filter (.getMethod ^Class % name param-classes))
            (catch NoSuchMethodException e nil))
          (.getInterfaces cls))
         (recur (.getSuperclass cls)))
        nil))
    (some
-    #(try (check-method (.getMethod ^Class % name param-classes))
+    #(try (method-filter (.getMethod ^Class % name param-classes))
       (catch NoSuchMethodException e nil))
     interfaces)
    (throw
@@ -84,12 +82,13 @@
 
 (defn define-class
   [name bytes super interfaces]
-  #_
+  #_;
   (with-open [fos (java.io.FileOutputStream.
-                    (java.io.File. (str \. java.io.File/separatorChar
-                                        "generated" java.io.File/separatorChar
-                                        name
-                                        ".class")))]
+                    (java.io.File.
+                      (str \. java.io.File/separatorChar
+                           "generated" java.io.File/separatorChar
+                           name
+                           ".class")))]
     (.write fos bytes)
     (.flush fos))
   (.defineClass ^DynamicClassLoader (deref clojure.lang.Compiler/LOADER)

@@ -13,6 +13,7 @@
         eutros.starmetallic.item.starmetal-sword
         eutros.starmetallic.lib.obfuscation
         eutros.starmetallic.lib.sided
+        eutros.starmetallic.lib.math
         eutros.starmetallic.Starmetallic))
 
 (defclass EntityBurst
@@ -26,6 +27,11 @@
     :args  [LivingEntity]
     :pre   'constructor
     :post  'from-player-look}]
+  :exposes-methods
+  [{:alias 'p$setRotation
+    :name  (!m 'func_70101_b ;; setRotation
+               )
+    :types [Float/TYPE Float/TYPE]}]
   :methods
   [{:alias 'tick
     :name  (!m 'func_70071_h_ ;; tick
@@ -42,13 +48,21 @@
    {:alias 'create-spawn-packet
     :name  (!m 'func_213297_N ;; createSpawnPacket
                )
+    :types []}
+   {:alias 'get-gravity
+    :name  (!m 'func_70185_h ;; getGravityVelocity
+               )
     :types []}])
+
+(defn get-world
+  [^Entity entity]
+  (! entity field_70170_p ;; world
+     ))
 
 (defn burst-tick
   [^EntityBurst this]
   (.s$tick this)
-  (let [world ^World (! this field_70170_p ;; world
-                        )
+  (let [world (get-world this)
         x     (! this
                  (func_226277_ct_ ;; getPosX
                    ))
@@ -76,6 +90,15 @@
   [^EntityBurst this ^RayTraceResult rtr]
   nil)
 
+(defn burst-get-gravity
+  [^EntityBurst this]
+  (if (>
+        (! this field_70173_aa ;; ticksExisted
+           )
+        60)
+    0.01
+    0))
+
 (def starlight-burst
   (!!
    (EntityType$Builder/create
@@ -96,12 +119,34 @@
   [^LivingEntity entity]
   [starlight-burst
    entity
-   (! entity field_70170_p ;; world
-      )])
+   (get-world entity)])
 
 (defn burst-from-player-look
   [^EntityBurst this ^LivingEntity entity]
-  ())
+  (let [yaw   (mod
+               (+
+                (! entity field_70177_z ;; rotationYaw
+                   )
+                180)
+               360)
+        pitch (mod
+               (-
+                (! entity field_70125_A ;; rotationPitch
+                   ))
+               360)
+        vel   0.5]
+    (.p$setRotation this yaw pitch)
+    (! this
+       (func_213293_j ;; setMotion
+        (* (sin-deg yaw)
+           (cos-deg pitch)
+           vel)
+        (* (sin-deg pitch)
+           vel)
+        (* -1
+           (cos-deg yaw)
+           (cos-deg pitch)
+           vel)))))
 
 (when-client
  (import

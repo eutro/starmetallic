@@ -36,6 +36,7 @@
         target-methods
         (map
          #(get-target-method
+           check-overridable
            super
            interfaces
            (-> (first %)

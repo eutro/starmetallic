@@ -52,6 +52,18 @@
 
     }
 
+    :exposes-methods - protected methods that will be exposed
+
+    {
+
+      :name - the name of the protected method
+
+      :alias - the name of the public method that invokes it
+
+      :types - the parameter types, a vector of classes
+
+    }
+
     :exposes-fields - protected fields that will be exposed
 
     {
@@ -214,7 +226,7 @@
 
     ;; add overrided methods
     (doseq [{name :name fn-name :alias sig :signature pclasses :types} methods]
-      (let [reflected ^java.lang.reflect.Method (get-target-method super interfaces (str name) (into-array Class pclasses))
+      (let [reflected ^java.lang.reflect.Method (get-target-method check-overridable super interfaces (str name) (into-array Class pclasses))
 
             rtype     (Type/getReturnType reflected)
             ptypes    (Type/getArgumentTypes reflected)
@@ -273,6 +285,29 @@
           (.pop gen))
 
         (doto gen
+              (.unbox rtype)
+
+              (.returnValue)
+              (.endMethod))))
+
+    ;; add exposed methods
+    (doseq [{name :name alias :alias pclasses :types} exposed-methods]
+      (let [reflected ^java.lang.reflect.Method (get-target-method check-visible super interfaces (str name) (into-array Class pclasses))
+
+            rtype     (Type/getReturnType reflected)
+            ptypes    (Type/getArgumentTypes reflected)]
+        (doto (GeneratorAdapter. Opcodes/ACC_PUBLIC
+                                 (Method. (str alias) rtype ptypes)
+                                 nil
+                                 nil
+                                 cv)
+              (.visitCode)
+
+              (.loadThis)
+              (.loadArgs)
+
+              (.invokeVirtual ctype (Method. (str name) rtype ptypes))
+
               (.returnValue)
               (.endMethod))))
 
