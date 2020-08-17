@@ -1,6 +1,6 @@
 (ns eutros.starmetallic.lib.subclass
   (:import (clojure.java.api Clojure)
-           (clojure.lang IFn)
+           (clojure.lang IFn Compiler$HostExpr)
            (clojure.asm ClassWriter Type Opcodes)
            (clojure.asm.commons GeneratorAdapter Method)
            (java.lang.reflect Field Modifier))
@@ -155,7 +155,7 @@
             ;; load args
             (dotimes [i (count this-classes)]
               (.loadArg gen i)
-              (clojure.lang.Compiler$HostExpr/emitBoxReturn nil gen (nth this-classes i)))
+              (Compiler$HostExpr/emitBoxReturn nil gen (nth this-classes i)))
 
             (doto gen
                   ;; invoke fn
@@ -174,7 +174,7 @@
                     (.loadLocal local)
                     (.push (int i))
                     (.invokeStatic rt-type nth-method)
-                    (clojure.lang.Compiler$HostExpr/emitUnboxArg nil (nth super-classes i))))
+                    (#(Compiler$HostExpr/emitUnboxArg nil % (nth super-classes i)))))
             (.invokeConstructor gen super-type super-constructor))
 
           (if (= this-classes super-classes)
@@ -196,7 +196,7 @@
           ;; unbox args
           (dotimes [i (count this-classes)]
             (.loadArg gen i)
-            (clojure.lang.Compiler$HostExpr/emitBoxReturn nil gen (nth this-classes i)))
+            (Compiler$HostExpr/emitBoxReturn nil gen (nth this-classes i)))
 
           (doto gen
                 ;; invoke fn
@@ -258,7 +258,7 @@
         ;; load args
         (dotimes [i (count pclasses)]
           (.loadArg gen i)
-          (clojure.lang.Compiler$HostExpr/emitBoxReturn nil gen (nth pclasses i)))
+          (Compiler$HostExpr/emitBoxReturn nil gen (nth pclasses i)))
 
         ;; invoke fn
         (.invokeInterface gen

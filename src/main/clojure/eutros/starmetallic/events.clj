@@ -18,3 +18,20 @@
  :impl-ns      eutros.starmetallic.entity.starlight-burst
  :load-impl-ns false
  :prefix       event-)
+
+(gen-class
+ :name         ^{Mod$EventBusSubscriber {:modid "starmetallic"}}
+               eutros.starmetallic.events.StarmetalSwordEvents
+ :main         false
+ :methods
+               [^:static [^{SubscribeEvent {}}
+                          leftclickempty
+                          [net.minecraftforge.event.entity.player.PlayerInteractEvent$LeftClickEmpty]
+                          void]
+                ^:static [^{SubscribeEvent {}}
+                          attackentity
+                          [net.minecraftforge.event.entity.player.AttackEntityEvent]
+                          void]]
+ :impl-ns      eutros.starmetallic.item.starmetal-sword
+ :load-impl-ns false
+ :prefix       event-)

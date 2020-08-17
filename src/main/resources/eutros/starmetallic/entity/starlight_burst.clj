@@ -10,6 +10,7 @@
            net.minecraft.util.math.RayTraceResult
            net.minecraftforge.fml.network.NetworkHooks)
   (:use eutros.starmetallic.lib.subclass
+        eutros.starmetallic.item.starmetal-sword
         eutros.starmetallic.lib.obfuscation
         eutros.starmetallic.lib.sided
         eutros.starmetallic.Starmetallic))
@@ -20,7 +21,11 @@
   :constructors
   [{:super [EntityType World]}
    {:super [EntityType Double/TYPE Double/TYPE Double/TYPE World]}
-   {:super [EntityType LivingEntity World]}]
+   {:super [EntityType LivingEntity World]}
+   {:super [EntityType LivingEntity World]
+    :args  [LivingEntity]
+    :pre   'constructor
+    :post  'from-player-look}]
   :methods
   [{:alias 'tick
     :name  (!m 'func_70071_h_ ;; tick
@@ -35,8 +40,8 @@
                )
     :types [RayTraceResult]}
    {:alias 'create-spawn-packet
-    :name (!m 'func_213297_N ;; createSpawnPacket
-              )
+    :name  (!m 'func_213297_N ;; createSpawnPacket
+               )
     :types []}])
 
 (defn burst-tick
@@ -44,10 +49,15 @@
   (.s$tick this)
   (let [world ^World (! this field_70170_p ;; world
                         )
-        pos   (.getPositionVector ^ThrowableEntity this)
-        x     (. pos x)
-        y     (. pos y)
-        z     (. pos z)]
+        x     (! this
+                 (func_226277_ct_ ;; getPosX
+                   ))
+        y     (! this
+                 (func_226278_cu_ ;; getPosY
+                   ))
+        z     (! this
+                 (func_226281_cx_ ;; getPosZ
+                   ))]
     (when
       (! world field_72995_K ;; isRemote
          )
@@ -75,12 +85,23 @@
              (EntityBurst. type world)))
     EntityClassification/MISC)
    (func_220321_a ;; size
-    0.5 0.5)
+    0 0)
    (setUpdateInterval 10)
    (setTrackingRange 64)
    (setShouldReceiveVelocityUpdates true)
    (func_206865_a ;; build
     "starlight_burst")))
+
+(defn burst-constructor
+  [^LivingEntity entity]
+  [starlight-burst
+   entity
+   (! entity field_70170_p ;; world
+      )])
+
+(defn burst-from-player-look
+  [^EntityBurst this ^LivingEntity entity]
+  ())
 
 (when-client
  (import
@@ -91,5 +112,11 @@
    [evt]
    (RenderingRegistry/registerEntityRenderingHandler starlight-burst
                                                      (RenderEntityEmpty$Factory.))))
+
+(alter-var-root
+ #'->EntityBurst
+ (constantly
+  (fn [^LivingEntity entity]
+    (EntityBurst. entity))))
 
 starlight-burst

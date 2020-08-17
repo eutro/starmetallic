@@ -46,7 +46,7 @@
 
   (def LOGGER (LogManager/getLogger "Starmetallic"))
 
-  (def tool-tier
+  (def tool-tier ;; TODO obfuscation
     (reify
      IItemTier
      (getMaxUses [_] 100)
@@ -60,7 +60,9 @@
   (register ITEMS 'item/starmetal_axe)
   (register ITEMS 'item/starmetal_pickaxe)
 
-  (register ENTITIES 'entity/starlight_burst))
+  (register ENTITIES 'entity/starlight_burst)
+
+  (load "packets"))
 
 (defn -post-init [this]
   (let [mod-bus (-> (FMLJavaModLoadingContext/get)
