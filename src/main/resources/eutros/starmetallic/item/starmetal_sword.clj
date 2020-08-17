@@ -13,7 +13,8 @@
                                                    AttackEntityEvent)
            (net.minecraft.util Hand SoundCategory)
            java.util.function.Consumer
-           hellfirepvp.astralsorcery.common.lib.SoundsAS)
+           hellfirepvp.astralsorcery.common.lib.SoundsAS
+           hellfirepvp.astralsorcery.common.item.base.AlignmentChargeRevealer)
   (:use [eutros.starmetallic.Starmetallic :only [tool-tier]]
         eutros.starmetallic.lib.specific-proxy
         eutros.starmetallic.lib.obfuscation
@@ -25,7 +26,7 @@
                                100 ;; ticks
                                )]
     (sproxy
-     [SwordItem]
+     [SwordItem AlignmentChargeRevealer]
      [;; tier
        ^IItemTier tool-tier
 
@@ -115,7 +116,7 @@
               ))
          SoundsAS/ILLUMINATION_WAND_LIGHT
          SoundCategory/PLAYERS
-         0.4
+         0.8
          1.4))))
 
 (defn event-leftclickempty

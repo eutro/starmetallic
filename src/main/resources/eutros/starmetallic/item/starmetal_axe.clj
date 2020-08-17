@@ -4,7 +4,8 @@
                                IItemTier
                                ItemStack)
            net.minecraft.world.World
-           net.minecraft.entity.Entity)
+           net.minecraft.entity.Entity
+           hellfirepvp.astralsorcery.common.item.base.AlignmentChargeRevealer)
   (:use [eutros.starmetallic.Starmetallic :only [tool-tier]]
         eutros.starmetallic.lib.specific-proxy
         eutros.starmetallic.lib.obfuscation
@@ -15,7 +16,7 @@
                                100 ;; ticks
                                )]
     (sproxy
-     [AxeItem]
+     [AxeItem AlignmentChargeRevealer]
      [;; tier
        ^IItemTier tool-tier
 
