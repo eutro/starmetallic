@@ -34,28 +34,28 @@
   :exposes-methods
   [{:alias 'p$setRotation
     :name  (!m 'func_70101_b                                ;; setRotation
-               )
+             )
     :types [Float/TYPE Float/TYPE]}]
   :methods
   [{:alias 'tick
     :name  (!m 'func_70071_h_                               ;; tick
-               )
+             )
     :types []}
    {:alias 'register-data
     :name  (!m 'func_70088_a                                ;; registerData
-               )
+             )
     :types []}
    {:alias 'on-impact
     :name  (!m 'func_70184_a                                ;; onImpact
-               )
+             )
     :types [RayTraceResult]}
    {:alias 'create-spawn-packet
     :name  (!m 'func_213297_N                               ;; createSpawnPacket
-               )
+             )
     :types []}
    {:alias 'get-gravity
     :name  (!m 'func_70185_h                                ;; getGravityVelocity
-               )
+             )
     :types []}])
 
 (defn get-world

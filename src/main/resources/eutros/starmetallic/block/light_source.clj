@@ -24,11 +24,11 @@
        (func_200951_a                                       ;; lightValue
          8))]
     ((!m 'func_149645_b                                     ;; getRenderType
-         )
+       )
      [^BlockState state]
      BlockRenderType/INVISIBLE)
     ((!m 'func_220053_a                                     ;; getShape
-         )
+       )
      [^BlockState state
       ^IBlockReader worldIn
       ^BlockPos pos
@@ -37,7 +37,7 @@
         (func_197880_a                                      ;; empty
           )))
     ((!m 'func_220082_b                                     ;; onBlockAdded
-         )
+       )
      [^BlockState state
       ^World world
       ^BlockPos pos
@@ -51,7 +51,7 @@
          light-source
          10)))
     ((!m 'func_225534_a_                                    ;; tick
-         )
+       )
      [^BlockState state
       ^ServerWorld world
       ^BlockPos pos

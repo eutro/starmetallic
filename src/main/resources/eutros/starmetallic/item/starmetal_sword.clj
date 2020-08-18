@@ -14,7 +14,8 @@
            (net.minecraft.util Hand SoundCategory)
            java.util.function.Consumer
            hellfirepvp.astralsorcery.common.lib.SoundsAS
-           hellfirepvp.astralsorcery.common.item.base.AlignmentChargeRevealer)
+           hellfirepvp.astralsorcery.common.item.base.AlignmentChargeRevealer
+           (net.minecraftforge.fml.network.simple SimpleChannel))
   (:use eutros.starmetallic.lib.specific-proxy
         eutros.starmetallic.lib.obfuscation
         eutros.starmetallic.item.common
@@ -39,7 +40,7 @@
        ^Item$Properties default-properties]
 
       ((!m 'func_77663_a                                    ;; inventoryTick
-           )
+         )
        [^ItemStack stack
         ^World world
         ^Entity entity
@@ -104,13 +105,12 @@
 (defn event-leftclickempty
   [^PlayerInteractEvent$LeftClickEmpty evt]
   (when (check-stack (.getItemStack evt))
-    (.sendToServer CHANNEL (PacketBurst.))))
+    (.sendToServer ^SimpleChannel CHANNEL (PacketBurst.))))
 
 (defn event-attackentity
   [^AttackEntityEvent evt]
   (when-not
-    (!! evt
-      (getPlayer)
+    (!! (.getPlayer evt)
       field_70170_p                                         ;; world
       field_72995_K                                         ;; isRemote
       )

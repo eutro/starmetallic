@@ -29,7 +29,7 @@
        ^Item$Properties default-properties]
 
       ((!m 'func_77663_a                                    ;; inventoryTick
-           )
+         )
        [^ItemStack stack
         ^World world
         ^Entity entity

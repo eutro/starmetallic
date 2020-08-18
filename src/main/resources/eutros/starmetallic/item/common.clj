@@ -27,29 +27,29 @@
 (def tool-tier
   (sproxy [IItemTier] []
     ((!m 'func_200926_a                                     ;; getMaxUses
-         )
+       )
      [] 100)
     ((!m 'func_200928_b                                     ;; getEfficiency
-         )
+       )
      [] 7.)
     ((!m 'func_200929_c                                     ;; getAttackDamage
-         )
+       )
      [] 6.)
     ((!m 'func_200925_d                                     ;; getHarvestLevel
-         )
+       )
      [] 4)
     ((!m 'func_200927_e                                     ;; getEnchantability
-         )
+       )
      [] 40)
     ((!m 'func_200924_f                                     ;; getRepairMaterial
-         )
+       )
      [] Ingredient/EMPTY)))
 
 (def item-group
   (if-client
     (sproxy [ItemGroup] [^String MODID]
       ((!m 'func_151244_d                                   ;; getIcon
-           )
+         )
        []
        (ItemStack. (.get ^RegistryObject sword))))
     (sproxy [ItemGroup] [^String MODID])))
