@@ -5,9 +5,9 @@
 
 (defn mapped-symbol
   [sym ^INameMappingService$Domain domain]
-  (symbol
-    (ObfuscationReflectionHelper/remapName domain
-                                           (str sym))))
+  (symbol (ObfuscationReflectionHelper/remapName
+            domain
+            (str sym))))
 
 (defn !c
   "Map a class.
@@ -32,13 +32,11 @@
 (defmacro !
   "Like the special form '. but mapped."
   [obj form]
-  (list '.
-        obj
+  (list '. obj
         (if (list? form)
-          (cons
-            (-> (first form)
-                (!m))
-            (next form))
+          (cons (-> (first form)
+                    (!m))
+                (next form))
           (!f form))))
 
 (defmacro !!

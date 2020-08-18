@@ -2,7 +2,7 @@
   (:import (clojure.asm ClassWriter Opcodes Type)
            (clojure.lang IProxy
                          IPersistentMap
-                         RT IFn Compiler$HostExpr)
+                         RT IFn Compiler$HostExpr IPersistentCollection)
            (clojure.asm.commons Method GeneratorAdapter))
   (:use [clojure.string :only [join]]
         eutros.starmetallic.lib.type-hints
@@ -12,23 +12,20 @@
   [class-and-interfaces args & fs]
   (let [[^Class super interfaces]
         (get-super-and-interfaces
-          (map
-            #(or (eval %)
-                 (throw (Exception. (str "Can't evaluate: " %))))
-            class-and-interfaces))
+          (map #(or (eval %)
+                    (throw (Exception. (str "Can't evaluate: " %))))
+               class-and-interfaces))
         constructor-classes (map get-type-hint args)
         target-methods
-        (map
-          #(get-target-method
-             check-overridable
-             super
-             interfaces
-             (-> (first %)
-                 eval
-                 str)
-             (->> (second %)
-                  (map get-type-hint)))
-          fs)
+        (map #(get-target-method check-overridable
+                                 super
+                                 interfaces
+                                 (-> (first %)
+                                     eval
+                                     str)
+                                 (->> (second %)
+                                      (map get-type-hint)))
+             fs)
 
         cv (ClassWriter. ClassWriter/COMPUTE_MAXS)
         pname (proxy-name super interfaces)
@@ -49,9 +46,9 @@
             cname
             nil
             (iname super)
-            (into-array
-              (map iname
-                   (cons IProxy interfaces))))
+            (into-array String
+                        (map iname
+                             (cons IProxy interfaces))))
 
     ;; add field for fn mappings
     (.visitField cv
@@ -85,7 +82,8 @@
           (.visitMethodInsn Opcodes/INVOKESPECIAL
                             (.getInternalName super-type)
                             (.getName m)
-                            (.getDescriptor m))
+                            (.getDescriptor m)
+                            false)
 
           (.returnValue)
           (.endMethod))
@@ -116,9 +114,8 @@
                                                      obj-type)))))
 
           (.unbox rtype)
-          (#(when
-              (= (.getSort rtype)
-                 Type/VOID)
+          (#(when (= (.getSort rtype)
+                     Type/VOID)
               (.pop ^GeneratorAdapter %)))
 
           (.returnValue)
@@ -155,9 +152,9 @@
         (.loadThis)
         (.dup)
         (.getField ctype fmap imap-type)
-        (.checkCast (to-type clojure.lang.IPersistentCollection))
+        (.checkCast (to-type IPersistentCollection))
         (.loadArgs)
-        (.invokeInterface (to-type clojure.lang.IPersistentCollection)
+        (.invokeInterface (to-type IPersistentCollection)
                           (Method/getMethod "clojure.lang.IPersistentCollection cons(Object)"))
         (.checkCast imap-type)
         (.putField ctype fmap imap-type)
@@ -187,14 +184,13 @@
                               meths (if (vector? (first meths))
                                       (list meths)
                                       meths)
-                              meths (map
-                                      (fn [[params & body]]
-                                        (cons (apply vector
-                                                     (with-meta 'this
-                                                                {:tag (symbol pname)})
-                                                     (map fn-hint-safe params))
-                                              body))
-                                      meths)]
+                              meths (map (fn [[params & body]]
+                                           (cons (apply vector
+                                                        (with-meta 'this
+                                                                   {:tag (symbol pname)})
+                                                        (map fn-hint-safe params))
+                                                 body))
+                                         meths)]
                           (recur (assoc fmap
                                    binding-name
                                    (cons 'fn meths))

@@ -9,31 +9,24 @@
 
 (def CHANNEL
   (NetworkRegistry/newSimpleChannel
-   (ResourceLocation. MODID "chan")
-   (reify
-    Supplier
-    (get [_] PROTOCOL))
-   (reify
-    Predicate
-    (test [_ t] (= t PROTOCOL)))
-   (reify
-    Predicate
-    (test [_ t] (= t PROTOCOL)))))
+    (ResourceLocation. MODID "chan")
+    (reify Supplier
+      (get [_] PROTOCOL))
+    (reify Predicate
+      (test [_ t] (= t PROTOCOL)))
+    (reify Predicate
+      (test [_ t] (= t PROTOCOL)))))
 
 (deftype PacketBurst [])
 
 (def ^:dynamic burst-handler nil)
 
 (.registerMessage ^SimpleChannel CHANNEL
-                  1
-                  PacketBurst
-                  (reify ;; encoder
-                   BiConsumer
-                   (accept [_ _ _] nil))
-                  (reify ;; decoder
-                   Function
-                   (apply [_ _] (PacketBurst.)))
-                  (reify ;; handler
-                   BiConsumer
-                   (accept [_ _ ctx-supplier]
-                           (burst-handler ctx-supplier))))
+                  1 PacketBurst
+                  (reify BiConsumer                         ;; encoder
+                    (accept [_ _ _] nil))
+                  (reify Function                           ;; decoder
+                    (apply [_ _] (PacketBurst.)))
+                  (reify BiConsumer                         ;; handler
+                    (accept [_ _ ctx-supplier]
+                      (burst-handler ctx-supplier))))

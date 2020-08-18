@@ -14,8 +14,7 @@
   (let [do-regen (create-regen 200                          ;; starlight every
                                100                          ;; ticks
                                )]
-    (sproxy
-      [AxeItem AlignmentChargeRevealer]
+    (sproxy [AxeItem AlignmentChargeRevealer]
       [;; tier
        ^IItemTier tool-tier
 

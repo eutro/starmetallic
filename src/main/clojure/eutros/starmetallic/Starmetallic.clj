@@ -35,12 +35,11 @@
   (defn register [^DeferredRegister registry path]
     (.register registry
                (name path)
-               (reify
-                 Supplier
+               (reify Supplier
                  (get [_]
-                   (with-open [iostream (.. (Thread/currentThread)
-                                          (getContextClassLoader)
-                                          (getResourceAsStream (str "/eutros/starmetallic/" path ".clj")))]
+                   (with-open [iostream (-> (Thread/currentThread)
+                                            (.getContextClassLoader)
+                                            (.getResourceAsStream (str "/eutros/starmetallic/" path ".clj")))]
                      (-> (InputStreamReader. iostream)
                          (Compiler/load (str "eutros/starmetallic/" path ".clj")
                                         (-> (name path)
@@ -59,7 +58,7 @@
 
   (load "packets"))
 
-(defn -post-init [this]
+(defn -post-init [_]
   (let [mod-bus (-> (FMLJavaModLoadingContext/get)
                     (.getModEventBus))]
     (.register ^DeferredRegister ITEMS mod-bus)

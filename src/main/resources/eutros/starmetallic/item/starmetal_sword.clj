@@ -55,66 +55,51 @@
 
 (defn check-stack
   [^ItemStack stack]
-  (and
-    (not
-      (! stack
-         (func_190926_b                                     ;; isEmpty
-           )))
-    (-> stack
-        (!
-          (func_77973_b                                     ;; getItem
-            ))
-        (= starmetal_sword))))
+  (and (not (! stack (func_190926_b                         ;; isEmpty
+                       )))
+       (-> stack
+           (! (func_77973_b                                 ;; getItem
+                ))
+           (= starmetal_sword))))
 
 (def ^:dynamic ->EntityBurst nil)
 
 (defn summon-burst
   [^PlayerEntity player]
-  (when
-    (and
-      (check-stack
-        (! player
-           (func_184614_ca                                  ;; getHeldItemMainhand
-             )))
-      (=
-        (! player
-           (func_184825_o                                   ;; getCooledAttackStrength
-             0))
-        1.))
+  (when (and (check-stack
+               (! player (func_184614_ca                    ;; getHeldItemMainhand
+                           )))
+             (= (! player (func_184825_o                    ;; getCooledAttackStrength
+                            0))
+                1.))
     (as-> (->EntityBurst player) $
           (!! player
-              field_70170_p                                 ;; world
-              (func_217411_a                                ;; addEntity
-                $)))
+            field_70170_p                                   ;; world
+            (func_217411_a                                  ;; addEntity
+              $)))
     (!! player
-        (func_184614_ca                                     ;; getHeldItemMainhand
-          )
-        (func_222118_a                                      ;; damageItem
-          1
-          player
-          (reify
-            Consumer
-            (accept [_ p]
-              (! p
-                 (func_213334_d                             ;; sendBreakAnimation
+      (func_184614_ca                                       ;; getHeldItemMainhand
+        )
+      (func_222118_a                                        ;; damageItem
+        1 player
+        (reify Consumer
+          (accept [_ p]
+            (! p (func_213334_d                             ;; sendBreakAnimation
                    Hand/MAIN_HAND))))))
     (!! player
-        field_70170_p                                       ;; world
-        (func_184148_a                                      ;; playSound
-          ^PlayerEntity (identity nil)
-          (! player
-             (func_226277_ct_                               ;; getPosX
-               ))
-          (! player
-             (func_226278_cu_                               ;; getPosY
-               ))
-          (! player
-             (func_226281_cx_                               ;; getPosZ
-               ))
-          SoundsAS/ILLUMINATION_WAND_LIGHT
-          SoundCategory/PLAYERS
-          0.8
-          1.4))))
+      field_70170_p                                         ;; world
+      (func_184148_a                                        ;; playSound
+        ^PlayerEntity (identity nil)
+        (! player (func_226277_ct_                          ;; getPosX
+                    ))
+        (! player (func_226278_cu_                          ;; getPosY
+                    ))
+        (! player (func_226281_cx_                          ;; getPosZ
+                    ))
+        SoundsAS/ILLUMINATION_WAND_LIGHT
+        SoundCategory/PLAYERS
+        0.8
+        1.4))))
 
 (defn event-leftclickempty
   [^PlayerInteractEvent$LeftClickEmpty evt]
@@ -125,10 +110,10 @@
   [^AttackEntityEvent evt]
   (when-not
     (!! evt
-        (getPlayer)
-        field_70170_p                                       ;; world
-        field_72995_K                                       ;; isRemote
-        )
+      (getPlayer)
+      field_70170_p                                         ;; world
+      field_72995_K                                         ;; isRemote
+      )
     (summon-burst (.getPlayer evt))))
 
 (alter-var-root
