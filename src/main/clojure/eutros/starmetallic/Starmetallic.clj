@@ -49,12 +49,12 @@
 
   (register BLOCKS 'block/light_source)
 
-  (def sword (register ITEMS 'item/starmetal_sword))
+  (register ENTITIES 'entity/starlight_burst)
+
+  (register ITEMS 'item/starmetal_sword)
   (register ITEMS 'item/starmetal_pickaxe)
   (register ITEMS 'item/starmetal_axe)
   (register ITEMS 'item/starmetal_hoe)
-
-  (register ENTITIES 'entity/starlight_burst)
 
   (load "packets"))
 

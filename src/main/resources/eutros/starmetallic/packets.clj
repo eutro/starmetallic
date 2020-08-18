@@ -2,7 +2,8 @@
   (:import net.minecraftforge.fml.network.NetworkRegistry
            net.minecraftforge.fml.network.simple.SimpleChannel
            (java.util.function Supplier Predicate BiConsumer Function)
-           (net.minecraft.util ResourceLocation))
+           (net.minecraft.util ResourceLocation)
+           (net.minecraftforge.fml.network NetworkEvent$Context))
   (:use eutros.starmetallic.Starmetallic))
 
 (def PROTOCOL "1")
@@ -19,8 +20,6 @@
 
 (deftype PacketBurst [])
 
-(def ^:dynamic burst-handler nil)
-
 (.registerMessage ^SimpleChannel CHANNEL
                   1 PacketBurst
                   (reify BiConsumer                         ;; encoder
@@ -29,4 +28,7 @@
                     (apply [_ _] (PacketBurst.)))
                   (reify BiConsumer                         ;; handler
                     (accept [_ _ ctx-supplier]
-                      (burst-handler ctx-supplier))))
+                      (let [ctx ^NetworkEvent$Context (.get ^Supplier ctx-supplier)]
+                        (-> (.getSender ctx)
+                            ((ns-resolve 'eutros.starmetallic.item.starmetal-sword
+                                         'summon-burst)))))))

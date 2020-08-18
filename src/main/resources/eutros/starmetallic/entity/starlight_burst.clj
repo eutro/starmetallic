@@ -13,7 +13,6 @@
            (net.minecraftforge.fml.client.registry RenderingRegistry)
            (hellfirepvp.astralsorcery.client.render.entity RenderEntityEmpty$Factory))
   (:use eutros.starmetallic.lib.subclass
-        eutros.starmetallic.item.starmetal-sword
         eutros.starmetallic.block.light-source
         eutros.starmetallic.lib.obfuscation
         eutros.starmetallic.lib.sided
@@ -161,10 +160,8 @@
     (RenderingRegistry/registerEntityRenderingHandler starlight-burst
                                                       (RenderEntityEmpty$Factory.))))
 
-(alter-var-root
-  #'->EntityBurst
-  (constantly
-    (fn [^LivingEntity entity]
-      (EntityBurst. entity))))
+(defn ->EntityBurst
+  [^LivingEntity entity]
+  (EntityBurst. entity))
 
 starlight-burst

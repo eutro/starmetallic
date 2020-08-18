@@ -6,8 +6,6 @@
            net.minecraft.world.World
            net.minecraft.entity.Entity
            net.minecraft.entity.player.PlayerEntity
-           net.minecraftforge.fml.network.NetworkEvent$Context
-           java.util.function.Supplier
            eutros.starmetallic.packets.PacketBurst
            (net.minecraftforge.event.entity.player PlayerInteractEvent$LeftClickEmpty
                                                    AttackEntityEvent)
@@ -21,7 +19,7 @@
         eutros.starmetallic.item.common
         eutros.starmetallic.packets))
 
-(def starmetal_sword
+(def starmetal-sword
   (let [do-regen (create-regen 200                          ;; starlight every
                                100                          ;; ticks
                                )]
@@ -61,9 +59,7 @@
        (-> stack
            (! (func_77973_b                                 ;; getItem
                 ))
-           (= starmetal_sword))))
-
-(def ^:dynamic ->EntityBurst nil)
+           (= starmetal-sword))))
 
 (defn summon-burst
   [^PlayerEntity player]
@@ -73,7 +69,8 @@
              (= (! player (func_184825_o                    ;; getCooledAttackStrength
                             0))
                 1.))
-    (as-> (->EntityBurst player) $
+    (as-> ((ns-resolve 'eutros.starmetallic.entity.starlight-burst
+                       '->EntityBurst) player) $
           (!! player
             field_70170_p                                   ;; world
             (func_217411_a                                  ;; addEntity
@@ -107,21 +104,4 @@
   (when (check-stack (.getItemStack evt))
     (.sendToServer ^SimpleChannel CHANNEL (PacketBurst.))))
 
-(defn event-attackentity
-  [^AttackEntityEvent evt]
-  (when-not
-    (!! (.getPlayer evt)
-      field_70170_p                                         ;; world
-      field_72995_K                                         ;; isRemote
-      )
-    (summon-burst (.getPlayer evt))))
-
-(alter-var-root
-  #'burst-handler
-  (constantly
-    (fn [^Supplier ctx-supplier]
-      (let [ctx ^NetworkEvent$Context (.get ctx-supplier)]
-        (-> (.getSender ctx)
-            summon-burst)))))
-
-starmetal_sword
+starmetal-sword

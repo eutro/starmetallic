@@ -27,10 +27,6 @@
   [^:static [^{SubscribeEvent {}}
              leftclickempty
              [net.minecraftforge.event.entity.player.PlayerInteractEvent$LeftClickEmpty]
-             void]
-   ^:static [^{SubscribeEvent {}}
-             attackentity
-             [net.minecraftforge.event.entity.player.AttackEntityEvent]
              void]]
   :impl-ns eutros.starmetallic.item.starmetal-sword
   :load-impl-ns false

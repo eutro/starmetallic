@@ -5,7 +5,6 @@
            net.minecraft.entity.Entity
            net.minecraft.entity.player.PlayerEntity
            hellfirepvp.astralsorcery.common.auxiliary.charge.AlignmentChargeHandler
-           net.minecraftforge.fml.RegistryObject
            net.minecraftforge.fml.LogicalSide)
   (:use eutros.starmetallic.Starmetallic
         eutros.starmetallic.lib.obfuscation
@@ -51,7 +50,8 @@
       ((!m 'func_151244_d                                   ;; getIcon
          )
        []
-       (ItemStack. (.get ^RegistryObject sword))))
+       (ItemStack. @(ns-resolve 'eutros.starmetallic.item.starmetal-sword
+                                'starmetal-sword))))
     (sproxy [ItemGroup] [^String MODID])))
 
 (def default-properties
