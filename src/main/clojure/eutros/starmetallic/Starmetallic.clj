@@ -26,6 +26,10 @@
     (DeferredRegister/create ForgeRegistries/ITEMS
                              ^String MODID))
 
+  (def BLOCKS
+    (DeferredRegister/create ForgeRegistries/BLOCKS
+                             ^String MODID))
+
   (def ENTITIES
     (DeferredRegister/create ForgeRegistries/ENTITIES
                              ^String MODID))
@@ -56,9 +60,12 @@
      (getEnchantability [_] 40)
      (getRepairMaterial [_] Ingredient/EMPTY)))
 
+  (register BLOCKS 'block/light_source)
+
   (register ITEMS 'item/starmetal_sword)
-  (register ITEMS 'item/starmetal_axe)
   (register ITEMS 'item/starmetal_pickaxe)
+  (register ITEMS 'item/starmetal_axe)
+  (register ITEMS 'item/starmetal_hoe)
 
   (register ENTITIES 'entity/starlight_burst)
 
@@ -68,4 +75,5 @@
   (let [mod-bus (-> (FMLJavaModLoadingContext/get)
                     (.getModEventBus))]
     (.register ^DeferredRegister ITEMS mod-bus)
-    (.register ^DeferredRegister ENTITIES mod-bus)))
+    (.register ^DeferredRegister ENTITIES mod-bus)
+    (.register ^DeferredRegister BLOCKS mod-bus)))

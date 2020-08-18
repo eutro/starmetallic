@@ -76,6 +76,18 @@
 
     }
 
+    :fields - instance fields to add
+
+    {
+
+      :name - the name of the field
+
+      :type - the type of the field
+
+      :signature - the signature of the field
+
+    }
+
     :signature - the signature of the class
 
   "
@@ -97,6 +109,8 @@
 
         exposed-methods     (get opts :exposes-methods [])
         exposed-fields      (get opts :exposes-fields [])
+
+        instance-fields     (get opts :fields [])
 
         super-type          ^Type (to-type super)
         interface-types     (to-types interfaces)
@@ -130,6 +144,17 @@
             (into-array String
                         (map iname
                              interface-types)))
+
+    ;; add fields
+    (doseq [{name :name type :type signature :signature} instance-fields]
+      (.visitField cv
+                   Opcodes/ACC_PUBLIC
+                   (str name)
+                   (.. Type
+                       (getType type)
+                       (getDescriptor))
+                   (str signature)
+                   nil))
 
     ;; add constructors
     (doseq [opts constructors]
@@ -296,20 +321,21 @@
 
             rtype     (Type/getReturnType reflected)
             ptypes    (Type/getArgumentTypes reflected)]
-        (doto (GeneratorAdapter. Opcodes/ACC_PUBLIC
-                                 (Method. (str alias) rtype ptypes)
-                                 nil
-                                 nil
-                                 cv)
-              (.visitCode)
+        (doto
+          (GeneratorAdapter. Opcodes/ACC_PUBLIC
+                             (Method. (str alias) rtype ptypes)
+                             nil
+                             nil
+                             cv)
+          (.visitCode)
 
-              (.loadThis)
-              (.loadArgs)
+          (.loadThis)
+          (.loadArgs)
 
-              (.invokeVirtual ctype (Method. (str name) rtype ptypes))
+          (.invokeVirtual ctype (Method. (str name) rtype ptypes))
 
-              (.returnValue)
-              (.endMethod))))
+          (.returnValue)
+          (.endMethod))))
 
     ;; add getters and setters
     (doseq [{name :name getter :get setter :set} exposed-fields]

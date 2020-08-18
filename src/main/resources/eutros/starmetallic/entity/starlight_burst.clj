@@ -7,10 +7,11 @@
                                  LivingEntity)
            net.minecraft.entity.projectile.ThrowableEntity
            net.minecraft.world.World
-           net.minecraft.util.math.RayTraceResult
+           (net.minecraft.util.math RayTraceResult BlockPos BlockPos$PooledMutable)
            net.minecraftforge.fml.network.NetworkHooks)
   (:use eutros.starmetallic.lib.subclass
         eutros.starmetallic.item.starmetal-sword
+        eutros.starmetallic.block.light-source
         eutros.starmetallic.lib.obfuscation
         eutros.starmetallic.lib.sided
         eutros.starmetallic.lib.math
@@ -72,13 +73,34 @@
         z     (! this
                  (func_226281_cx_ ;; getPosZ
                    ))]
-    (when
-      (! world field_72995_K ;; isRemote
-         )
+    (if (! world field_72995_K ;; isRemote
+           )
       (.addParticle world
                     net.minecraft.particles.ParticleTypes/LARGE_SMOKE
                     x y z
-                    0. 0. 0.))))
+                    0. 0. 0.)
+      (let [pos (BlockPos$PooledMutable/retain this)]
+        (when
+          (and (< 0.1 (Math/random))
+               (!! world
+                   (func_180495_p ;; getBlockState
+                    pos)
+                   (isAir world pos)))
+          (! world
+             (func_175656_a ;; setBlockState
+              (BlockPos$PooledMutable/retain this)
+              (! light-source
+                 (func_176223_P ;; getDefaultState
+                   )))))
+
+        (when
+          (>
+           (! this field_70173_aa ;; ticksExisted
+              )
+           200)
+          (! this
+             (func_70106_y ;; remove
+               )))))))
 
 (defn burst-register-data [^EntityBurst this] nil)
 
@@ -93,9 +115,9 @@
 (defn burst-get-gravity
   [^EntityBurst this]
   (if (>
-        (! this field_70173_aa ;; ticksExisted
-           )
-        60)
+       (! this field_70173_aa ;; ticksExisted
+          )
+       60)
     0.01
     0))
 
