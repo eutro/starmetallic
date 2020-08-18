@@ -3,8 +3,6 @@
            java.util.function.Supplier
            net.minecraftforge.fml.common.Mod
            net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext
-           net.minecraft.item.IItemTier
-           net.minecraft.item.crafting.Ingredient
            (net.minecraftforge.registries DeferredRegister
                                           ForgeRegistries)
            org.apache.logging.log4j.LogManager))
@@ -12,10 +10,10 @@
 (set! *warn-on-reflection* true)
 
 (gen-class
- :name      ^{Mod "starmetallic"}
-            eutros.starmetallic.Starmetallic
- :main      false
- :post-init "post-init")
+  :name ^{Mod "starmetallic"}
+  eutros.starmetallic.Starmetallic
+  :main false
+  :post-init "post-init")
 
 (def MODID "starmetallic")
 
@@ -38,31 +36,21 @@
     (.register registry
                (name path)
                (reify
-                Supplier
-                (get [_]
-                     (with-open [iostream (.. (Thread/currentThread)
-                                              (getContextClassLoader)
-                                              (getResourceAsStream (str "/eutros/starmetallic/" path ".clj")))]
-                       (-> (InputStreamReader. iostream)
-                           (Compiler/load (str "eutros/starmetallic/" path ".clj")
-                                          (-> (name path)
-                                              (str ".clj")))))))))
+                 Supplier
+                 (get [_]
+                   (with-open [iostream (.. (Thread/currentThread)
+                                          (getContextClassLoader)
+                                          (getResourceAsStream (str "/eutros/starmetallic/" path ".clj")))]
+                     (-> (InputStreamReader. iostream)
+                         (Compiler/load (str "eutros/starmetallic/" path ".clj")
+                                        (-> (name path)
+                                            (str ".clj")))))))))
 
   (def LOGGER (LogManager/getLogger "Starmetallic"))
 
-  (def tool-tier ;; TODO obfuscation
-    (reify
-     IItemTier
-     (getMaxUses [_] 100)
-     (getEfficiency [_] 7.)
-     (getAttackDamage [_] 6.)
-     (getHarvestLevel [_] 4)
-     (getEnchantability [_] 40)
-     (getRepairMaterial [_] Ingredient/EMPTY)))
-
   (register BLOCKS 'block/light_source)
 
-  (register ITEMS 'item/starmetal_sword)
+  (def sword (register ITEMS 'item/starmetal_sword))
   (register ITEMS 'item/starmetal_pickaxe)
   (register ITEMS 'item/starmetal_axe)
   (register ITEMS 'item/starmetal_hoe)

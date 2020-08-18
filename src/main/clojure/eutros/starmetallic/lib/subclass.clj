@@ -251,7 +251,7 @@
 
     ;; add overrided methods
     (doseq [{name :name fn-name :alias sig :signature pclasses :types} methods]
-      (let [reflected ^java.lang.reflect.Method (get-target-method check-overridable super interfaces (str name) (into-array Class pclasses))
+      (let [reflected ^java.lang.reflect.Method (get-target-method check-overridable super interfaces (str name) pclasses)
 
             rtype     (Type/getReturnType reflected)
             ptypes    (Type/getArgumentTypes reflected)
@@ -317,7 +317,7 @@
 
     ;; add exposed methods
     (doseq [{name :name alias :alias pclasses :types} exposed-methods]
-      (let [reflected ^java.lang.reflect.Method (get-target-method check-visible super interfaces (str name) (into-array Class pclasses))
+      (let [reflected ^java.lang.reflect.Method (get-target-method check-visible super interfaces (str name) pclasses)
 
             rtype     (Type/getReturnType reflected)
             ptypes    (Type/getArgumentTypes reflected)]

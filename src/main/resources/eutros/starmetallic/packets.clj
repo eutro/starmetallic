@@ -1,15 +1,15 @@
 (ns eutros.starmetallic.packets
   (:import net.minecraftforge.fml.network.NetworkRegistry
-           net.minecraft.util.ResourceLocation
            net.minecraftforge.fml.network.simple.SimpleChannel
-           (java.util.function Supplier Predicate BiConsumer Function))
+           (java.util.function Supplier Predicate BiConsumer Function)
+           (net.minecraft.util ResourceLocation))
   (:use eutros.starmetallic.Starmetallic))
 
 (def PROTOCOL "1")
 
 (def CHANNEL
   (NetworkRegistry/newSimpleChannel
-   (net.minecraft.util.ResourceLocation. MODID "chan")
+   (ResourceLocation. MODID "chan")
    (reify
     Supplier
     (get [_] PROTOCOL))
@@ -29,11 +29,11 @@
                   PacketBurst
                   (reify ;; encoder
                    BiConsumer
-                   (accept [_ msg buffer] nil))
+                   (accept [_ _ _] nil))
                   (reify ;; decoder
                    Function
-                   (apply [_ buffer] (PacketBurst.)))
+                   (apply [_ _] (PacketBurst.)))
                   (reify ;; handler
                    BiConsumer
-                   (accept [_ msg ctx-supplier]
+                   (accept [_ _ ctx-supplier]
                            (burst-handler ctx-supplier))))

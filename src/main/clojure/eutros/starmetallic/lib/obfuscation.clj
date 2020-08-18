@@ -36,9 +36,9 @@
         obj
         (if (list? form)
           (cons
-           (-> (first form)
-               (!m))
-           (next form))
+            (-> (first form)
+                (!m))
+            (next form))
           (!f form))))
 
 (defmacro !!

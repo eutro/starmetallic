@@ -16,48 +16,48 @@
 (def light-source
   (sproxy [Block]
           [;; properties
-            ^Block$Properties
-            (!! Block$Properties
-                (func_200950_a ;; from
-                 (! Blocks field_150350_a ;; AIR
+           ^Block$Properties
+           (!! Block$Properties
+               (func_200950_a                               ;; from
+                 (! Blocks field_150350_a                   ;; AIR
                     ))
-                (func_200951_a ;; lightValue
+               (func_200951_a                               ;; lightValue
                  8))]
-          ((!m 'func_149645_b ;; getRenderType
+          ((!m 'func_149645_b                               ;; getRenderType
                )
-            [^BlockState state]
-            BlockRenderType/INVISIBLE)
-          ((!m 'func_220053_a ;; getShape
+           [^BlockState state]
+           BlockRenderType/INVISIBLE)
+          ((!m 'func_220053_a                               ;; getShape
                )
-            [^BlockState state
-             ^IBlockReader worldIn
-             ^BlockPos pos
-             ^ISelectionContext context]
-            (! VoxelShapes
-               (func_197880_a ;; empty
-                 )))
-          ((!m 'func_220082_b ;; onBlockAdded
+           [^BlockState state
+            ^IBlockReader worldIn
+            ^BlockPos pos
+            ^ISelectionContext context]
+           (! VoxelShapes
+              (func_197880_a                                ;; empty
+                )))
+          ((!m 'func_220082_b                               ;; onBlockAdded
                )
-            [^BlockState state
-             ^World world
-             ^BlockPos pos
-             ^BlockState oldState
-             ^boolean isMoving]
-            (!! world
-                (func_205220_G_ ;; getPendingBlockTicks
-                  )
-                (func_205362_a ;; scheduleTick
+           [^BlockState state
+            ^World world
+            ^BlockPos pos
+            ^BlockState oldState
+            ^boolean isMoving]
+           (!! world
+               (func_205220_G_                              ;; getPendingBlockTicks
+                 )
+               (func_205362_a                               ;; scheduleTick
                  pos
                  light-source
                  10)))
-          ((!m 'func_225534_a_ ;; tick
+          ((!m 'func_225534_a_                              ;; tick
                )
-            [^BlockState state
-             ^ServerWorld world
-             ^BlockPos pos
-             ^Random rand]
-            (! world
-               (func_217377_a ;; removeBlock
+           [^BlockState state
+            ^ServerWorld world
+            ^BlockPos pos
+            ^Random rand]
+           (! world
+              (func_217377_a                                ;; removeBlock
                 pos
                 false)))))
 

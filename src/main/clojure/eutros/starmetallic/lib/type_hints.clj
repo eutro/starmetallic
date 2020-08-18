@@ -36,7 +36,7 @@
 (defn get-type-hint
   [imeta]
   (tag-class
-   ((meta imeta) :tag)))
+   (get (meta imeta) :tag)))
 
 (defn fn-hint-safe
   [sym]
