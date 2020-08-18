@@ -80,27 +80,28 @@
                     x y z
                     0. 0. 0.)
       (let [pos (BlockPos$PooledMutable/retain this)]
-        (when
-          (and (< 0.1 (Math/random))
-               (!! world
-                   (func_180495_p ;; getBlockState
-                    pos)
-                   (isAir world pos)))
-          (! world
-             (func_175656_a ;; setBlockState
-              (BlockPos$PooledMutable/retain this)
-              (! light-source
-                 (func_176223_P ;; getDefaultState
-                   )))))
-
-        (when
-          (>
-           (! this field_70173_aa ;; ticksExisted
-              )
-           200)
+        (if
+          (or
+           (not
+            (!! world
+                (func_180495_p ;; getBlockState
+                 pos)
+                (isAir world pos)))
+           (>
+            (! this field_70173_aa ;; ticksExisted
+               )
+            200))
           (! this
              (func_70106_y ;; remove
-               )))))))
+               ))
+
+          (when (< 0.1 (Math/random))
+            (! world
+               (func_175656_a ;; setBlockState
+                (BlockPos$PooledMutable/retain this)
+                (! light-source
+                   (func_176223_P ;; getDefaultState
+                     ))))))))))
 
 (defn burst-register-data [^EntityBurst this] nil)
 
