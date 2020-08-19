@@ -5,7 +5,8 @@
                                ItemStack)
            net.minecraft.world.World
            net.minecraft.entity.Entity
-           hellfirepvp.astralsorcery.common.item.base.AlignmentChargeRevealer)
+           hellfirepvp.astralsorcery.common.item.base.AlignmentChargeRevealer
+           (hellfirepvp.astralsorcery.common.constellation ConstellationItem IWeakConstellation IMinorConstellation))
   (:use eutros.starmetallic.lib.specific-proxy
         eutros.starmetallic.lib.obfuscation
         eutros.starmetallic.item.common))
@@ -15,7 +16,7 @@
                                100                          ;; ticks
                                )]
     (sproxy
-      [HoeItem AlignmentChargeRevealer]
+      [HoeItem AlignmentChargeRevealer ConstellationItem]
       [;; tier
        ^IItemTier tool-tier
 
@@ -38,6 +39,13 @@
         [^ItemStack oldStack
          ^ItemStack newStack
          ^boolean slotChanged]
-        (should-reequip oldStack newStack slotChanged)))))
+        (should-reequip oldStack newStack slotChanged))
+
+      ('getAttunedConstellation [^ItemStack stack] (get-constellation stack TAG_ATTUNED IWeakConstellation))
+      ('setAttunedConstellation [^ItemStack stack
+                                 ^IWeakConstellation cst] (set-constellation stack cst TAG_ATTUNED IWeakConstellation))
+      ('getTraitConstellation [^ItemStack stack] (get-constellation stack TAG_TRAIT IMinorConstellation))
+      ('setTraitConstellation [^ItemStack stack
+                               ^IMinorConstellation cst] (set-constellation stack cst TAG_TRAIT IMinorConstellation)))))
 
 starmetal_hoe

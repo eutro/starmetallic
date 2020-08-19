@@ -38,7 +38,7 @@
 
     :implements - directly implemented interfaces
 
-    :methods - methods to override, vectors
+    :methods - methods to override, vector
 
     {
 
@@ -47,6 +47,8 @@
       :signature - the signature of the method
 
       :name - the name of the method
+
+      :super-alias - the name given to the super method, prefixed with 's$
 
       :types - the parameter types, a vector of classes
 
@@ -150,7 +152,7 @@
                    (str name)
                    (-> (Type/getType ^Class type)
                        (.getDescriptor))
-                   (str signature)
+                   (if (nil? signature) nil (str signature))
                    nil))
 
     ;; add constructors
@@ -246,7 +248,7 @@
           (.endMethod))))
 
     ;; add overrided methods
-    (doseq [{name :name fn-name :alias sig :signature pclasses :types} methods]
+    (doseq [{name :name super-name :super-alias fn-name :alias sig :signature pclasses :types} methods]
       (let [reflected ^java.lang.reflect.Method (get-target-method check-overridable super interfaces (str name) pclasses)
 
             rtype (Type/getReturnType reflected)
@@ -260,23 +262,24 @@
                                    (make-array Type 0)
                                    cv)
 
-            sm (Method. (str "s$" name) rtype ptypes)]
+            sm (Method. (str "s$" super-name) rtype ptypes)]
 
-        ;; super invoker
-        (doto (GeneratorAdapter. Opcodes/ACC_PUBLIC sm nil nil cv)
-          (.visitCode)
+        (when super-name
+          ;; super invoker
+          (doto (GeneratorAdapter. Opcodes/ACC_PUBLIC sm nil nil cv)
+            (.visitCode)
 
-          (.loadThis)
-          (.loadArgs)
+            (.loadThis)
+            (.loadArgs)
 
-          (.visitMethodInsn Opcodes/INVOKESPECIAL
-                            (.getInternalName super-type)
-                            (.getName m)
-                            (.getDescriptor m)
-                            false)
+            (.visitMethodInsn Opcodes/INVOKESPECIAL
+                              (.getInternalName super-type)
+                              (.getName m)
+                              (.getDescriptor m)
+                              false)
 
-          (.returnValue)
-          (.endMethod))
+            (.returnValue)
+            (.endMethod)))
 
         ;; binding invoker
         (doto gen

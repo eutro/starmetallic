@@ -13,7 +13,8 @@
            java.util.function.Consumer
            hellfirepvp.astralsorcery.common.lib.SoundsAS
            hellfirepvp.astralsorcery.common.item.base.AlignmentChargeRevealer
-           (net.minecraftforge.fml.network.simple SimpleChannel))
+           (net.minecraftforge.fml.network.simple SimpleChannel)
+           (hellfirepvp.astralsorcery.common.constellation ConstellationItem IWeakConstellation IMinorConstellation))
   (:use eutros.starmetallic.lib.specific-proxy
         eutros.starmetallic.lib.obfuscation
         eutros.starmetallic.item.common
@@ -24,7 +25,7 @@
                                100                          ;; ticks
                                )]
     (sproxy
-      [SwordItem AlignmentChargeRevealer]
+      [SwordItem AlignmentChargeRevealer ConstellationItem]
       [;; tier
        ^IItemTier tool-tier
 
@@ -50,7 +51,14 @@
         [^ItemStack oldStack
          ^ItemStack newStack
          ^boolean slotChanged]
-        (should-reequip oldStack newStack slotChanged)))))
+        (should-reequip oldStack newStack slotChanged))
+
+      ('getAttunedConstellation [^ItemStack stack] (get-constellation stack TAG_ATTUNED IWeakConstellation))
+      ('setAttunedConstellation [^ItemStack stack
+                                 ^IWeakConstellation cst] (set-constellation stack cst TAG_ATTUNED IWeakConstellation))
+      ('getTraitConstellation [^ItemStack stack] (get-constellation stack TAG_TRAIT IMinorConstellation))
+      ('setTraitConstellation [^ItemStack stack
+                               ^IMinorConstellation cst] (set-constellation stack cst TAG_TRAIT IMinorConstellation)))))
 
 (defn check-stack
   [^ItemStack stack]

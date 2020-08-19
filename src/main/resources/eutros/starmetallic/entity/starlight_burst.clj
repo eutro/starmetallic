@@ -36,7 +36,8 @@
              )
     :types [Float/TYPE Float/TYPE]}]
   :methods
-  [{:alias 'tick
+  [{:alias 'tick!
+    :super-alias 'tick
     :name  (!m 'func_70071_h_                               ;; tick
              )
     :types []}
@@ -62,7 +63,7 @@
   (! entity field_70170_p                                   ;; world
      ))
 
-(defn burst-tick
+(defn burst-tick!
   [^EntityBurst this]
   (.s$tick this)
   (let [world (get-world this)

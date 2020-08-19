@@ -68,7 +68,7 @@
                        rtype
                        ptypes)
 
-            sm (Method. (str "s$" (.getName meth))
+            sm (Method. (str "s$" (.getName meth)) ;; this could be very not good
                         rtype
                         ptypes)]
 

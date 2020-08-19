@@ -5,7 +5,8 @@
            net.minecraft.entity.Entity
            net.minecraft.entity.player.PlayerEntity
            hellfirepvp.astralsorcery.common.auxiliary.charge.AlignmentChargeHandler
-           net.minecraftforge.fml.LogicalSide)
+           net.minecraftforge.fml.LogicalSide
+           (hellfirepvp.astralsorcery.common.constellation IWeakConstellation IConstellation))
   (:use eutros.starmetallic.Starmetallic
         eutros.starmetallic.lib.obfuscation
         eutros.starmetallic.lib.sided
@@ -90,3 +91,36 @@
                  (- (! stack (func_77952_i                  ;; getDamage
                                ))
                     1))))))
+
+(defn get-or-create-tag
+  [^ItemStack stack]
+  (! stack (func_196082_o                                   ;; getOrCreateTag
+             )))
+
+(defn get-tag
+  [^ItemStack stack]
+  (! stack (func_77978_p                                    ;; getTag
+             )))
+
+(def TAG_ATTUNED (str MODID ":attuned"))
+(def TAG_TRAIT (str MODID ":attuned"))
+
+(defn get-constellation
+  [^ItemStack stack
+   ^String key
+   ^Class clazz]
+  (when-let [cst (some-> (get-tag stack)
+                         (IConstellation/readFromNBT key))]
+    (when (instance? clazz cst) cst)))
+
+(defn set-constellation
+  [^ItemStack stack
+   ^IConstellation cst
+   ^String key
+   ^Class clazz]
+  (if (instance? clazz cst)
+    (as-> (get-or-create-tag stack) $
+          (.writeToNBT cst $ key))
+    (some-> (get-tag stack)
+            (! (func_82580_o                                ;; remove
+                 key)))))

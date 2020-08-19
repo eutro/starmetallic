@@ -56,7 +56,8 @@
   (register ITEMS 'item/starmetal_axe)
   (register ITEMS 'item/starmetal_hoe)
 
-  (load "packets"))
+  (load "packets")
+  (load "recipe/attune_tool"))
 
 (defn -post-init [_]
   (let [mod-bus (-> (FMLJavaModLoadingContext/get)
