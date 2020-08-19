@@ -5,15 +5,21 @@
            (hellfirepvp.astralsorcery.common.tile TileAttunementAltar)
            (hellfirepvp.astralsorcery.common.constellation.world DayTimeHelper)
            (net.minecraft.util.math AxisAlignedBB)
-           (hellfirepvp.astralsorcery.common.util.data Vector3)
+           (hellfirepvp.astralsorcery.common.util.data Vector3 Vector3$RotAxis)
            (net.minecraft.entity.item ItemEntity)
            (hellfirepvp.astralsorcery.common.constellation IConstellation IWeakConstellation ConstellationItem IMinorConstellation)
            (net.minecraftforge.fml LogicalSide)
            (net.minecraft.nbt CompoundNBT)
-           (hellfirepvp.astralsorcery.common.lib RegistriesAS)
+           (hellfirepvp.astralsorcery.common.lib RegistriesAS ColorsAS)
            (net.minecraft.tileentity TileEntity)
            (net.minecraft.item ItemStack)
-           (net.minecraft.entity Entity))
+           (net.minecraft.entity Entity)
+           (hellfirepvp.astralsorcery.client.effect.handler EffectHelper)
+           (hellfirepvp.astralsorcery.client.effect.source.orbital FXOrbitalCrystalAttunement)
+           (hellfirepvp.astralsorcery.client.effect.source FXSourceOrbital)
+           (hellfirepvp.astralsorcery.client.effect.function RefreshFunction VFXColorFunction)
+           (java.util.function BiPredicate)
+           (hellfirepvp.astralsorcery.client.effect EntityComplexFX))
   (:use eutros.starmetallic.Starmetallic
         eutros.starmetallic.lib.obfuscation
         eutros.starmetallic.lib.subclass
@@ -119,7 +125,7 @@
            {:type Object
             :name 'itemAttuneSound}
            {:type Object
-            :name 'internalOrbital}
+            :name 'innerOrbital}
            {:type Object
             :name 'flare}])
 
@@ -236,8 +242,27 @@
 
       (when-client
         (when (.isClient side)
-          ;; TODO fancy stuff
-          )))))
+          (let [ticks (.p$getTick this)
+                altar-pos (.subtract (.clone hover-pos)
+                                     0 1.4 0)]
+
+            (when (nil? (.innerOrbital this))
+              (set! (.innerOrbital this)
+                    (-> ^FXSourceOrbital
+                        (EffectHelper/spawnSource (FXOrbitalCrystalAttunement. altar-pos
+                                                                               hover-pos
+                                                                               (.getActiveConstellation altar)))
+                        (.setOrbitRadius 3)
+                        (.setBranches 6)
+                        (.setOrbitAxis Vector3$RotAxis/Y_AXIS)
+                        (.setTicksPerRotation 300)
+                        (.refresh (RefreshFunction/tileExistsAnd
+                                    altar
+                                    (reify BiPredicate
+                                      (test [_ t _] (and (.canPlayConstellationActiveEffects ^TileAttunementAltar t)
+                                                         (= (.getActiveRecipe altar) this)))))))))
+
+            ))))))
 
 (def DURATION 1000)
 
@@ -250,9 +275,14 @@
   ;; Called on client to stop effects and such
   (defn attune-stop-effects
     [^ActiveAttuneTool this ^TileAttunementAltar altar]
-    (let [active? #(or (not (.canPlayConstellationActiveEffects altar))
-                       (not= (.getActiveRecipe altar) this))]
-      (println "stop stop stop!"))))
+    (when (attune-finished? this altar)
+      ;; TODO sound
+      )
+    (when-some [orbital ^EntityComplexFX (.innerOrbital this)]
+      (.requestRemoval orbital))
+
+    (when-some [flare ^EntityComplexFX (.flare this)]
+      (.requestRemoval flare))))
 
 (def recipe
   (proxy [AttunementRecipe] [(ResourceLocation. MODID "attune_tools")]
