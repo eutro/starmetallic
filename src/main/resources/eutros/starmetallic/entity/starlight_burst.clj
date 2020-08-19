@@ -7,11 +7,22 @@
                                  LivingEntity)
            net.minecraft.entity.projectile.ThrowableEntity
            net.minecraft.world.World
-           net.minecraft.particles.ParticleTypes
            (net.minecraft.util.math RayTraceResult BlockPos$PooledMutable)
            net.minecraftforge.fml.network.NetworkHooks
            (net.minecraftforge.fml.client.registry RenderingRegistry)
-           (hellfirepvp.astralsorcery.client.render.entity RenderEntityEmpty$Factory))
+           (hellfirepvp.astralsorcery.client.render.entity RenderEntityEmpty$Factory)
+           (hellfirepvp.astralsorcery.client.effect.handler EffectHandler EffectHandler$PendingEffect EffectHelper EffectRegistrar)
+           (hellfirepvp.astralsorcery.client.effect.source FXSource)
+           (hellfirepvp.astralsorcery.common.util.data Vector3)
+           (hellfirepvp.astralsorcery.client.effect.context.base BatchRenderContext)
+           (java.util.function Function Supplier)
+           (hellfirepvp.astralsorcery.client.effect EffectProperties)
+           (net.minecraft.client Minecraft)
+           (hellfirepvp.astralsorcery.client.effect.vfx FXFacingParticle FXLightbeam)
+           (hellfirepvp.astralsorcery.client.effect.function VFXColorFunction VFXAlphaFunction VFXMotionController)
+           (java.util Random)
+           (hellfirepvp.astralsorcery.common.util MiscUtils)
+           (hellfirepvp.astralsorcery.client.lib EffectTemplatesAS))
   (:use eutros.starmetallic.lib.subclass
         eutros.starmetallic.block.light-source
         eutros.starmetallic.lib.obfuscation
@@ -36,11 +47,11 @@
              )
     :types [Float/TYPE Float/TYPE]}]
   :methods
-  [{:alias 'tick!
+  [{:alias       'tick!
     :super-alias 'tick
-    :name  (!m 'func_70071_h_                               ;; tick
-             )
-    :types []}
+    :name        (!m 'func_70071_h_                         ;; tick
+                   )
+    :types       []}
    {:alias 'register-data
     :name  (!m 'func_70088_a                                ;; registerData
              )
@@ -56,29 +67,46 @@
    {:alias 'get-gravity
     :name  (!m 'func_70185_h                                ;; getGravityVelocity
              )
-    :types []}])
+    :types []}]
+  :fields [{:name 'lastStar
+            :type Vector3}])
 
 (defn get-world
   [^Entity entity]
   (! entity field_70170_p                                   ;; world
      ))
 
+(def random (Random.))
+
 (defn burst-tick!
   [^EntityBurst this]
   (.s$tick this)
-  (let [world (get-world this)
-        x (! this (func_226277_ct_                          ;; getPosX
-                    ))
-        y (! this (func_226278_cu_                          ;; getPosY
-                    ))
-        z (! this (func_226281_cx_                          ;; getPosZ
-                    ))]
+  (let [world (get-world this)]
     (if (! world field_72995_K                              ;; isRemote
            )
-      (.addParticle world
-                    ParticleTypes/LARGE_SMOKE
-                    x y z
-                    0. 0. 0.)
+      (when-client
+        (when (<= 0.2 (rand))
+          (when (nil? (.lastStar this))
+            (set! (.lastStar this)
+                  (Vector3. (! this (func_174791_d          ;; getPositionVector
+                                      )))))
+
+          (let [burst-pos (Vector3. (! this (func_174791_d  ;; getPositionVector
+                                              )))]
+            (-> (FXLightbeam. (.clone (.lastStar this)))
+                (.setup (.clone (doto (.lastStar this)
+                                  (.setX (.getX burst-pos))
+                                  (.setY (.getY burst-pos))
+                                  (.setZ (.getZ burst-pos))
+                                  (MiscUtils/applyRandomOffset random 0.5)))
+                        0.1 0.1)
+                (.color VFXColorFunction/WHITE)
+                (.setAlphaMultiplier 0.8)
+                (.alpha VFXAlphaFunction/FADE_OUT)
+                (.setMaxAge (+ (* (.nextGaussian random) 2)
+                               10))
+                (EffectHelper/refresh EffectTemplatesAS/LIGHTBEAM)))))
+
       (let [pos (BlockPos$PooledMutable/retain this)]
         (if (or (not (!! world
                        (func_180495_p                       ;; getBlockState
