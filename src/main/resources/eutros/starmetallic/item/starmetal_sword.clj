@@ -14,7 +14,8 @@
            hellfirepvp.astralsorcery.common.lib.SoundsAS
            hellfirepvp.astralsorcery.common.item.base.AlignmentChargeRevealer
            (net.minecraftforge.fml.network.simple SimpleChannel)
-           (hellfirepvp.astralsorcery.common.constellation ConstellationItem IWeakConstellation IMinorConstellation))
+           (hellfirepvp.astralsorcery.common.constellation ConstellationItem IWeakConstellation IMinorConstellation)
+           (java.util List))
   (:use eutros.clojurelib.lib.class-gen
         eutros.starmetallic.lib.obfuscation
         eutros.starmetallic.item.common
@@ -25,6 +26,7 @@
                 100                                         ;; ticks
                 ))
 
+#rip/rip ^{}
 (defclass
   SMSword (:extends SwordItem) (:implements AlignmentChargeRevealer ConstellationItem)
 
@@ -40,6 +42,14 @@
 
             ;; properties
             ^Item$Properties default-properties]))
+
+  #rip/client ^void
+  (:method #obf/obf ^{:obf/srg func_77624_a} addInformation
+    [^ItemStack stack
+     ^World worldIn
+     ^List tooltip
+     ^net.minecraft.client.util.ITooltipFlag flagIn]
+    (add-information this stack tooltip))
 
   (:method #obf/obf ^{:obf/srg func_77663_a} inventoryTick
     [^ItemStack stack ^World world ^Entity entity ^int slot ^boolean isSelected]

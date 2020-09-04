@@ -6,7 +6,8 @@
            net.minecraft.world.World
            net.minecraft.entity.Entity
            hellfirepvp.astralsorcery.common.item.base.AlignmentChargeRevealer
-           (hellfirepvp.astralsorcery.common.constellation ConstellationItem IWeakConstellation IMinorConstellation))
+           (hellfirepvp.astralsorcery.common.constellation ConstellationItem IWeakConstellation IMinorConstellation)
+           (java.util List))
   (:use eutros.clojurelib.lib.class-gen
         eutros.starmetallic.lib.obfuscation
         eutros.starmetallic.item.common))
@@ -16,6 +17,7 @@
                 100                                         ;; ticks
                 ))
 
+#rip/rip ^{}
 (defclass
   SMPick (:extends PickaxeItem) (:implements AlignmentChargeRevealer ConstellationItem)
 
@@ -31,6 +33,14 @@
 
             ;; properties
             ^Item$Properties default-properties]))
+
+  #rip/client ^void
+  (:method #obf/obf ^{:obf/srg func_77624_a} addInformation
+    [^ItemStack stack
+     ^World worldIn
+     ^List tooltip
+     ^net.minecraft.client.util.ITooltipFlag flagIn]
+    (add-information this stack tooltip))
 
   (:method #obf/obf ^{:obf/srg func_77663_a} inventoryTick
     [^ItemStack stack ^World world ^Entity entity ^int slot ^boolean isSelected]

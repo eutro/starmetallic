@@ -6,7 +6,10 @@
            net.minecraft.entity.player.PlayerEntity
            hellfirepvp.astralsorcery.common.auxiliary.charge.AlignmentChargeHandler
            net.minecraftforge.fml.LogicalSide
-           (hellfirepvp.astralsorcery.common.constellation IConstellation))
+           (hellfirepvp.astralsorcery.common.constellation IConstellation ConstellationItem)
+           (hellfirepvp.astralsorcery.common.data.research ResearchHelper GatedKnowledge)
+           (net.minecraft.util.text TranslationTextComponent TextFormatting)
+           (java.util List))
   (:use eutros.starmetallic.Starmetallic
         eutros.starmetallic.lib.obfuscation
         eutros.starmetallic.lib.sided
@@ -116,3 +119,33 @@
                 (! (func_82580_o                            ;; remove
                      key)))
         false)))
+
+(defn add-information [^ConstellationItem item
+                       ^ItemStack stack
+                       ^List tooltip]
+  (let [progress (ResearchHelper/getClientProgress)
+        tier (.getTierReached progress)]
+    (when-some [attuned (.getAttunedConstellation item stack)]
+      (.add tooltip (-> (if (and (.canSee GatedKnowledge/CRYSTAL_TUNE tier)
+                                 (.hasConstellationDiscovered progress attuned))
+                          (TranslationTextComponent.
+                            "crystal.info.astralsorcery.attuned"
+                            (into-array Object
+                                        [(-> (.getConstellationName attuned)
+                                             (.applyTextStyle TextFormatting/BLUE))]))
+                          (TranslationTextComponent.
+                            "astralsorcery.progress.missing.knowledge"
+                            (make-array Object 0)))
+                        (.applyTextStyle TextFormatting/GRAY))))
+    (when-some [trait (.getTraitConstellation item stack)]
+      (.add tooltip (-> (if (and (.canSee GatedKnowledge/CRYSTAL_TUNE tier)
+                                 (.hasConstellationDiscovered progress trait))
+                          (TranslationTextComponent.
+                            "crystal.info.astralsorcery.trait"
+                            (into-array Object
+                                        [(-> (.getConstellationName trait)
+                                             (.applyTextStyle TextFormatting/BLUE))]))
+                          (TranslationTextComponent.
+                            "astralsorcery.progress.missing.knowledge"
+                            (make-array Object 0)))
+                        (.applyTextStyle TextFormatting/GRAY))))))
