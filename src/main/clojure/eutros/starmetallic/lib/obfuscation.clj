@@ -1,7 +1,6 @@
 (ns eutros.starmetallic.lib.obfuscation
   (:import net.minecraftforge.fml.common.ObfuscationReflectionHelper
-           cpw.mods.modlauncher.api.INameMappingService$Domain
-           clojure.lang.Symbol))
+           cpw.mods.modlauncher.api.INameMappingService$Domain))
 
 (defn mapped-symbol
   [sym ^INameMappingService$Domain domain]

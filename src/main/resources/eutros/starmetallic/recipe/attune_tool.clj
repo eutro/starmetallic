@@ -10,19 +10,19 @@
            (hellfirepvp.astralsorcery.common.constellation IConstellation IWeakConstellation ConstellationItem IMinorConstellation)
            (net.minecraftforge.fml LogicalSide)
            (net.minecraft.nbt CompoundNBT)
-           (hellfirepvp.astralsorcery.common.lib RegistriesAS ColorsAS)
+           (hellfirepvp.astralsorcery.common.lib RegistriesAS)
            (net.minecraft.tileentity TileEntity)
            (net.minecraft.item ItemStack)
            (net.minecraft.entity Entity)
            (hellfirepvp.astralsorcery.client.effect.handler EffectHelper)
            (hellfirepvp.astralsorcery.client.effect.source.orbital FXOrbitalCrystalAttunement)
            (hellfirepvp.astralsorcery.client.effect.source FXSourceOrbital)
-           (hellfirepvp.astralsorcery.client.effect.function RefreshFunction VFXColorFunction)
+           (hellfirepvp.astralsorcery.client.effect.function RefreshFunction)
            (java.util.function BiPredicate)
            (hellfirepvp.astralsorcery.client.effect EntityComplexFX))
   (:use eutros.starmetallic.Starmetallic
         eutros.starmetallic.lib.obfuscation
-        eutros.starmetallic.lib.subclass
+        eutros.clojurelib.lib.class-gen
         eutros.starmetallic.lib.sided))
 
 (defn applicable-constellation?
@@ -72,111 +72,145 @@
           (when (applicable-constellation? closest cst)
             closest))))))
 
-(defclass ActiveAttuneTool
-  :prefix "attune-"
-  :constructors [{:super [AttunementRecipe]
-                  :args  [AttunementRecipe IConstellation Integer/TYPE]
-                  :pre   'pass-first
-                  :post  'direct-post}
-                 {:super [AttunementRecipe]
-                  :args  [AttunementRecipe CompoundNBT]
-                  :pre   'pass-first
-                  :post  'read!}]
-  :super AttunementRecipe$Active
-  :methods
-  (let [methods [{:name  'stopCrafting
-                  :alias 'stop-crafting
-                  :types [TileAttunementAltar]}
-                 {:name  'finishRecipe
-                  :alias 'finish-recipe
-                  :types [TileAttunementAltar]}
-                 {:name  'doTick
-                  :alias 'tick!
-                  :types [LogicalSide TileAttunementAltar]}
-                 {:name  'isFinished
-                  :alias 'finished?
-                  :types [TileAttunementAltar]}
-                 {:name        'matches
-                  :alias       'matches?
-                  :super-alias 'matches
-                  :types       [TileAttunementAltar]}
-                 {:name        'writeToNBT
-                  :super-alias 'writeToNBT
-                  :alias       'write!
-                  :types       [CompoundNBT]}
-                 {:name        'readFromNBT
-                  :super-alias 'readFromNBT
-                  :alias       'read!
-                  :types       [CompoundNBT]}]]
-    (if-client
-      (conj methods
-            {:name  'stopEffects
-             :alias 'stop-effects
-             :types [TileAttunementAltar]})
-      methods))
-  :exposes-methods [{:name  'getTick
-                     :alias 'p$getTick
-                     :types []}]
-  :fields [{:type Integer/TYPE
-            :name 'entityId}
-           {:type IConstellation
-            :name 'constellation}
-
-           {:type Object
-            :name 'itemAttuneSound}
-           {:type Object
-            :name 'innerOrbital}
-           {:type Object
-            :name 'flare}])
-
-(defn attune-pass-first
-  ([recipe _]
-   [recipe])
-  ([recipe _ _]
-   [recipe]))
-
-(defn attune-direct-post
-  [^ActiveAttuneTool this _ cst id]
-  (set! (.constellation this) cst)
-  (set! (.entityId this) id))
-
 (def TAG_CONSTELLATION "constellation")
 (def TAG_ENTITY "entity")
 
-(defn attune-write!
-  [^ActiveAttuneTool this ^CompoundNBT cmp]
-  (.s$writeToNBT this cmp)
+(def DURATION 1000)
 
-  (! cmp (func_74778_a                                      ;; putString
-           TAG_CONSTELLATION
-           (-> this
-               .constellation
-               (.getRegistryName)
-               str)))
-  (! cmp (func_74768_a                                      ;; putInt
-           TAG_ENTITY
-           (.entityId this))))
+(declare get-entity)
 
-(defn attune-read!
-  ([^ActiveAttuneTool this _ ^CompoundNBT cmp]
-   (attune-read! this cmp))
-  ([^ActiveAttuneTool this ^CompoundNBT cmp]
-   (.s$readFromNBT this cmp)
+(defclass
+  ActiveAttuneTool (:extends AttunementRecipe$Active)
 
-   (set! (.constellation this)
-         (.getValue RegistriesAS/REGISTRY_CONSTELLATIONS
-                    (-> (! cmp (func_74779_i                ;; getString
-                                 TAG_CONSTELLATION))
-                        (ResourceLocation.))))
-   (set! (.entityId this)
-         (! cmp (func_74762_e                               ;; getInt
-                  TAG_ENTITY)))))
+  (:field ^int entity-id)
+  (:field ^IConstellation constellation)
 
-;; Called on server when this recipe should stop (stop effects, world interactions, ...)
-(defn attune-stop-crafting
-  [^ActiveAttuneTool this ^TileAttunementAltar altar]
-  ;; NOOP
-  )
+  (:field item-attune-sound)
+  (:field inner-orbital)
+  (:field flare)
+
+  (:constructor [^AttunementRecipe recipe
+                 ^IConstellation constellation
+                 ^int entity-id]
+    (super [^AttunementRecipe recipe])
+    (set! (.constellation this) constellation)
+    (set! (.entity-id this) entity-id))
+
+  (:constructor [^AttunementRecipe recipe
+                 ^CompoundNBT nbt]
+    (super [^AttunementRecipe recipe])
+    (.readFromNBT this nbt))
+
+  (:method stopCrafting [^TileAttunementAltar altar])
+
+  ;; Called on server when this recipe should create rewards
+  (:method finishRecipe [^TileAttunementAltar altar]
+    (when-some [entity ^ItemEntity (get-entity this altar)]
+      (let [stack ^ItemStack
+                  (! entity (func_92059_d                   ;; getItem
+                              ))
+            item (! stack (func_77973_b                     ;; getItem
+                            ))
+            cst-item ^ConstellationItem item
+            cst (.getActiveConstellation altar)]
+        (when (and (nil? (.getAttunedConstellation cst-item stack))
+                   (instance? IWeakConstellation cst))
+          (.setAttunedConstellation cst-item stack cst))
+        (when (and (nil? (.getTraitConstellation cst-item stack))
+                   (instance? IMinorConstellation cst))
+          (.setTraitConstellation cst-item stack cst)))))
+
+  (:method doTick [^LogicalSide side
+                   ^TileAttunementAltar altar]
+    (when-some [entity ^ItemEntity (get-entity this altar)]
+      (let [hover-pos (.add (Vector3. altar)
+                            0.5 1.4 0.5)]
+        (! entity (func_70107_b                             ;; setPosition
+                    (.getX hover-pos)
+                    (.getY hover-pos)
+                    (.getZ hover-pos)))
+        (set! (! entity field_70169_q                       ;; prevPosX
+                 )
+              (.getX hover-pos))
+        (set! (! entity field_70167_r                       ;; prevPosY
+                 )
+              (.getY hover-pos))
+        (set! (! entity field_70166_s                       ;; prevPosZ
+                 )
+              (.getZ hover-pos))
+        (! entity (func_213293_j                            ;; setMotion
+                    0 0 0))
+
+        (when-client
+          (when (.isClient side)
+            (let [ticks (call-protected ^int getTick)
+                  altar-pos (.subtract (.clone hover-pos)
+                                       0 1.4 0)]
+
+              (when (nil? (.inner-orbital this))
+                (set! (.inner-orbital this)
+                      (-> ^FXSourceOrbital
+                          (EffectHelper/spawnSource (FXOrbitalCrystalAttunement. altar-pos
+                                                                                 hover-pos
+                                                                                 (.getActiveConstellation altar)))
+                          (.setOrbitRadius 3)
+                          (.setBranches 6)
+                          (.setOrbitAxis Vector3$RotAxis/Y_AXIS)
+                          (.setTicksPerRotation 300)
+                          (.refresh (RefreshFunction/tileExistsAnd
+                                      altar
+                                      (reify BiPredicate
+                                        (test [_ t _] (and (.canPlayConstellationActiveEffects ^TileAttunementAltar t)
+                                                           (= (.getActiveRecipe altar) this)))))))))
+
+              ))))))
+
+  ;; Called every tick on server to test if this recipe is done. Create 'reward' and return true when finished.
+  (:method ^boolean isFinished [^TileAttunementAltar altar]
+    (>= (call-protected ^int getTick) DURATION))
+
+  (:method ^boolean matches [^TileAttunementAltar altar]
+    (and (call-super ^boolean matches ^TileAttunementAltar altar)
+         (when-some [entity (get-entity this altar)]
+           (applicable-constellation? entity
+                                      (.getActiveConstellation altar)))
+         (= (.constellation this)
+            (.getActiveConstellation altar))))
+
+  (:method writeToNBT [^CompoundNBT nbt]
+    (call-super ^void writeToNBT ^CompoundNBT nbt)
+    (! nbt (func_74778_a                                    ;; putString
+             TAG_CONSTELLATION
+             (-> this
+                 .constellation
+                 (.getRegistryName)
+                 str)))
+    (! nbt (func_74768_a                                    ;; putInt
+             TAG_ENTITY
+             (.entity-id this))))
+
+  (:method readFromNBT [^CompoundNBT nbt]
+    (call-super ^void readFromNBT ^CompoundNBT nbt)
+    (set! (.constellation this)
+          (.getValue RegistriesAS/REGISTRY_CONSTELLATIONS
+                     (-> (! nbt (func_74779_i               ;; getString
+                                  TAG_CONSTELLATION))
+                         (ResourceLocation.))))
+    (set! (.entity-id this)
+          (! nbt (func_74762_e                              ;; getInt
+                   TAG_ENTITY))))
+
+  ;; client-only
+  ;; Called on client to stop effects and such
+  (:method stopEffects [^TileAttunementAltar altar]
+    (when (.isFinished this altar)
+      ;; TODO sound
+      )
+    (when-some [orbital ^EntityComplexFX (.inner-orbital this)]
+      (.requestRemoval orbital))
+
+    (when-some [flare ^EntityComplexFX (.flare this)]
+      (.requestRemoval flare))))
 
 (defn ^ItemEntity
   get-entity
@@ -185,104 +219,11 @@
                                      (! (func_145831_w      ;; getWorld
                                           ))
                                      (! (func_73045_a       ;; getEntityById
-                                          (.entityId this))))]
+                                          (.entity-id this))))]
     (when (and (! entity (func_70089_S                      ;; isAlive
                            ))
                (instance? ItemEntity entity))
       entity)))
-
-(defn attune-matches?
-  [^ActiveAttuneTool this ^TileAttunementAltar altar]
-  (and (.s$matches this altar)
-       (when-some [entity (get-entity this altar)]
-         (applicable-constellation? entity
-                                    (.getActiveConstellation altar)))
-       (= (.constellation this)
-          (.getActiveConstellation altar))))
-
-;; Called on server when this recipe should create rewards
-(defn attune-finish-recipe
-  [^ActiveAttuneTool this ^TileAttunementAltar altar]
-  (when-some [entity (get-entity this altar)]
-    (let [stack ^ItemStack
-                (! entity (func_92059_d                     ;; getItem
-                            ))
-          item (! stack (func_77973_b                       ;; getItem
-                          ))
-          cst-item ^ConstellationItem item
-          cst (.getActiveConstellation altar)]
-      (when (and (nil? (.getAttunedConstellation cst-item stack))
-                 (instance? IWeakConstellation cst))
-        (.setAttunedConstellation cst-item stack cst))
-      (when (and (nil? (.getTraitConstellation cst-item stack))
-                 (instance? IMinorConstellation cst))
-        (.setTraitConstellation cst-item stack cst)))))
-
-;; Called every tick for both sides
-(defn attune-tick!
-  [^ActiveAttuneTool this ^LogicalSide side ^TileAttunementAltar altar]
-  (when-some [entity (get-entity this altar)]
-    (let [hover-pos (.add (Vector3. altar)
-                          0.5 1.4 0.5)]
-      (! entity (func_70107_b                               ;; setPosition
-                  (.getX hover-pos)
-                  (.getY hover-pos)
-                  (.getZ hover-pos)))
-      (set! (! entity field_70169_q                         ;; prevPosX
-               )
-            (.getX hover-pos))
-      (set! (! entity field_70167_r                         ;; prevPosY
-               )
-            (.getY hover-pos))
-      (set! (! entity field_70166_s                         ;; prevPosZ
-               )
-            (.getZ hover-pos))
-      (! entity (func_213293_j                              ;; setMotion
-                  0 0 0))
-
-      (when-client
-        (when (.isClient side)
-          (let [ticks (.p$getTick this)
-                altar-pos (.subtract (.clone hover-pos)
-                                     0 1.4 0)]
-
-            (when (nil? (.innerOrbital this))
-              (set! (.innerOrbital this)
-                    (-> ^FXSourceOrbital
-                        (EffectHelper/spawnSource (FXOrbitalCrystalAttunement. altar-pos
-                                                                               hover-pos
-                                                                               (.getActiveConstellation altar)))
-                        (.setOrbitRadius 3)
-                        (.setBranches 6)
-                        (.setOrbitAxis Vector3$RotAxis/Y_AXIS)
-                        (.setTicksPerRotation 300)
-                        (.refresh (RefreshFunction/tileExistsAnd
-                                    altar
-                                    (reify BiPredicate
-                                      (test [_ t _] (and (.canPlayConstellationActiveEffects ^TileAttunementAltar t)
-                                                         (= (.getActiveRecipe altar) this)))))))))
-
-            ))))))
-
-(def DURATION 1000)
-
-;; Called every tick on server to test if this recipe is done. Create 'reward' and return true when finished.
-(defn attune-finished?
-  [^ActiveAttuneTool this ^TileAttunementAltar _]
-  (>= (.p$getTick this) DURATION))
-
-(when-client
-  ;; Called on client to stop effects and such
-  (defn attune-stop-effects
-    [^ActiveAttuneTool this ^TileAttunementAltar altar]
-    (when (attune-finished? this altar)
-      ;; TODO sound
-      )
-    (when-some [orbital ^EntityComplexFX (.innerOrbital this)]
-      (.requestRemoval orbital))
-
-    (when-some [flare ^EntityComplexFX (.flare this)]
-      (.requestRemoval flare))))
 
 (def recipe
   (proxy [AttunementRecipe] [(ResourceLocation. MODID "attune_tools")]
@@ -300,5 +241,4 @@
     (deserialize [^TileAttunementAltar _ ^CompoundNBT cmp ^AttunementRecipe$Active _]
       (ActiveAttuneTool. recipe cmp))))
 
-(.register AttunementCraftingRegistry/INSTANCE
-           recipe)
+(.register AttunementCraftingRegistry/INSTANCE recipe)

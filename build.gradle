@@ -94,7 +94,7 @@ minecraft {
 }
 
 repositories {
-    mavenCentral()
+    mavenLocal()
     maven {
         name = 'clojars'
         url = 'https://repo.clojars.org'
@@ -115,7 +115,6 @@ repositories {
 
 dependencies {
     minecraft 'net.minecraftforge:forge:1.15.2-31.2.36'
-    implementation 'org.clojure:clojure:1.10.0'
 
     compileOnly fg.deobf("mezz.jei:jei-${mc_version}:${jei_ver}:api")
     runtimeOnly fg.deobf("mezz.jei:jei-${mc_version}:${jei_ver}")
@@ -125,6 +124,8 @@ dependencies {
 
     implementation fg.deobf("curse.maven:observerlib:${observer_lib_file}")
     implementation fg.deobf("curse.maven:astralsorcery:${astral_file}")
+
+    implementation 'eutros.clojurelib:clojure-lib:1.10.0_0.1.5'
 }
 
 // Example for how to get properties into the manifest for reading by the runtime..
