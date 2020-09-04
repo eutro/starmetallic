@@ -45,18 +45,18 @@
     (super [^EntityType starlight-burst
             ^LivingEntity entity
             ^World (get-world entity)])
-    (let [yaw (mod (+ (! entity field_70177_z                 ;; rotationYaw
+    (let [yaw (mod (+ (! entity field_70177_z               ;; rotationYaw
                          )
                       180)
                    360)
-          pitch (mod (- (! entity field_70125_A               ;; rotationPitch
+          pitch (mod (- (! entity field_70125_A             ;; rotationPitch
                            ))
                      360)
           vel 0.5]
       (call-protected #obf/obf ^{:obf/srg func_70101_b} setRotation
                       ^float (float yaw)
                       ^float (float pitch))
-      (! this (func_213293_j                                  ;; setMotion
+      (! this (func_213293_j                                ;; setMotion
                 (* (sin-deg yaw)
                    (cos-deg pitch)
                    vel)
@@ -72,16 +72,16 @@
     []
     (call-super #obf/obf ^{:obf/srg func_70071_h_} tick)
     (let [world (get-world this)]
-      (if (! world field_72995_K                              ;; isRemote
+      (if (! world field_72995_K                            ;; isRemote
              )
         (when-client
-          (when (<= 0.2 (rand))
+          (when (<= 0.01 (rand))
             (when (nil? (.lastStar this))
               (set! (.lastStar this)
-                    (Vector3. (! this (func_174791_d          ;; getPositionVector
+                    (Vector3. (! this (func_174791_d        ;; getPositionVector
                                         )))))
 
-            (let [burst-pos (Vector3. (! this (func_174791_d  ;; getPositionVector
+            (let [burst-pos (Vector3. (! this (func_174791_d ;; getPositionVector
                                                 )))]
               (-> (FXLightbeam. (.clone (.lastStar this)))
                   (.setup (.clone (doto (.lastStar this)
@@ -95,23 +95,30 @@
                   (.alpha VFXAlphaFunction/FADE_OUT)
                   (.setMaxAge (+ (* (.nextGaussian random) 2)
                                  10))
-                  (EffectHelper/refresh EffectTemplatesAS/LIGHTBEAM)))))
+                  (EffectHelper/refresh EffectTemplatesAS/LIGHTBEAM))
+
+              (-> (EffectHelper/of EffectTemplatesAS/GENERIC_PARTICLE)
+                  (.spawn (.lastStar this))
+                  (.color VFXColorFunction/WHITE)
+                  (.setScaleMultiplier 0.25)
+                  (.setMaxAge (+ (* (.nextGaussian random) 2)
+                                 10))))))
 
         (let [pos (BlockPos$PooledMutable/retain this)]
           (if (or (not (!! world
-                         (func_180495_p                       ;; getBlockState
-                           pos)
-                         (isAir world pos)))
-                  (> (! this field_70173_aa                   ;; ticksExisted
+                           (func_180495_p                   ;; getBlockState
+                             pos)
+                           (isAir world pos)))
+                  (> (! this field_70173_aa                 ;; ticksExisted
                         )
                      200))
-            (! this (func_70106_y                             ;; remove
+            (! this (func_70106_y                           ;; remove
                       ))
 
             (when (< 0.1 (Math/random))
-              (! world (func_175656_a                         ;; setBlockState
+              (! world (func_175656_a                       ;; setBlockState
                          (BlockPos$PooledMutable/retain this)
-                         (! light-source (func_176223_P       ;; getDefaultState
+                         (! light-source (func_176223_P     ;; getDefaultState
                                            ))))))))))
 
   ^{Override {}}
@@ -128,7 +135,7 @@
   ^{Override {}}
   ^float
   (:method #obf/obf ^{:obf/srg func_70185_h} getGravityVelocity []
-    (if (> (! this field_70173_aa                             ;; ticksExisted
+    (if (> (! this field_70173_aa                           ;; ticksExisted
               )
            60)
       0.01
@@ -140,13 +147,13 @@
           (create [_ type world]
             (EntityBurst. type world)))
         EntityClassification/MISC)
-    (func_220321_a                                          ;; size
-      0 0)
-    (setUpdateInterval 10)
-    (setTrackingRange 64)
-    (setShouldReceiveVelocityUpdates true)
-    (func_206865_a                                          ;; build
-      "starlight_burst")))
+      (func_220321_a                                        ;; size
+        0 0)
+      (setUpdateInterval 10)
+      (setTrackingRange 64)
+      (setShouldReceiveVelocityUpdates true)
+      (func_206865_a                                        ;; build
+        "starlight_burst")))
 
 (when-client
   (defn event-clientsetup [_]
