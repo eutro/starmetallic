@@ -36,16 +36,10 @@
                                stack)))]
     (let [item (! ^ItemStack stack (func_77973_b            ;; getItem
                                      ))]
-      (when (-> (.getRegistryName item)
-                (! (func_110624_b                           ;; getNamespace
-                     ))
-                (= MODID))
-        (or (and (nil? (.getAttunedConstellation ^ConstellationItem item
-                                                 stack))
-                 (instance? IWeakConstellation cst))
-            (and (nil? (.getTraitConstellation ^ConstellationItem item
-                                               stack))
-                 (instance? IMinorConstellation cst)))))))
+      (-> (.getRegistryName item)
+          (! (func_110624_b                           ;; getNamespace
+               ))
+          (= MODID)))))
 
 (defn ^ItemEntity find-tool
   [^TileAttunementAltar altar]
