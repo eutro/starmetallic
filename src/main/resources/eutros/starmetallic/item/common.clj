@@ -6,11 +6,11 @@
            net.minecraft.entity.player.PlayerEntity
            hellfirepvp.astralsorcery.common.auxiliary.charge.AlignmentChargeHandler
            net.minecraftforge.fml.LogicalSide
-           (hellfirepvp.astralsorcery.common.constellation IWeakConstellation IConstellation))
+           (hellfirepvp.astralsorcery.common.constellation IConstellation))
   (:use eutros.starmetallic.Starmetallic
         eutros.starmetallic.lib.obfuscation
         eutros.starmetallic.lib.sided
-        eutros.starmetallic.lib.specific-proxy))
+        eutros.clojurelib.lib.class-gen))
 
 (defn should-reequip
   [^ItemStack oldStack
@@ -25,35 +25,25 @@
                  )))))
 
 (def tool-tier
-  (sproxy [IItemTier] []
-    ((!m 'func_200926_a                                     ;; getMaxUses
-       )
-     [] 100)
-    ((!m 'func_200928_b                                     ;; getEfficiency
-       )
-     [] 7.)
-    ((!m 'func_200929_c                                     ;; getAttackDamage
-       )
-     [] 6.)
-    ((!m 'func_200925_d                                     ;; getHarvestLevel
-       )
-     [] 4)
-    ((!m 'func_200927_e                                     ;; getEnchantability
-       )
-     [] 40)
-    ((!m 'func_200924_f                                     ;; getRepairMaterial
-       )
-     [] Ingredient/EMPTY)))
+  (reify IItemTier
+    (#obf/obf ^{:obf/srg func_200926_a} getMaxUses [this] 100)
+    (#obf/obf ^{:obf/srg func_200928_b} getEfficiency [this] 7.)
+    (#obf/obf ^{:obf/srg func_200929_c} getAttackDamage [this] 6.)
+    (#obf/obf ^{:obf/srg func_200925_d} getHarvestLevel [this] 4)
+    (#obf/obf ^{:obf/srg func_200927_e} getEnchantability [this] 40)
+    (#obf/obf ^{:obf/srg func_200924_f} getRepairMaterial [this] Ingredient/EMPTY)))
 
-(def item-group
-  (if-client
-    (sproxy [ItemGroup] [^String MODID]
-      ((!m 'func_151244_d                                   ;; getIcon
-         )
-       []
-       (ItemStack. @(ns-resolve 'eutros.starmetallic.item.starmetal-sword
-                                'starmetal-sword))))
-    (sproxy [ItemGroup] [^String MODID])))
+#rip/rip ^{}
+(defclass
+  SMItemGroup (:extends ItemGroup)
+  (:constructor [^String label])
+
+  #rip/client ^ItemStack
+  (:method #obf/obf ^{:obf/srg func_151244_d} createIcon []
+    (ItemStack. @(ns-resolve 'eutros.starmetallic.item.starmetal-sword
+                             'starmetal-sword))))
+
+(def item-group (new SMItemGroup MODID))
 
 (def default-properties
   (!! (Item$Properties.)
@@ -119,8 +109,10 @@
    ^String key
    ^Class clazz]
   (if (instance? clazz cst)
-    (as-> (get-or-create-tag stack) $
-          (.writeToNBT cst $ key))
-    (some-> (get-tag stack)
-            (! (func_82580_o                                ;; remove
-                 key)))))
+    (do (as-> (get-or-create-tag stack) $
+              (.writeToNBT cst $ key))
+        true)
+    (do (some-> (get-tag stack)
+                (! (func_82580_o                            ;; remove
+                     key)))
+        false)))
