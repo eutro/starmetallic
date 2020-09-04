@@ -125,7 +125,7 @@ dependencies {
     implementation fg.deobf("curse.maven:observerlib:${observer_lib_file}")
     implementation fg.deobf("curse.maven:astralsorcery:${astral_file}")
 
-    implementation 'eutros.clojurelib:clojure-lib:1.10.0_0.1.5'
+    implementation 'eutros.clojurelib:clojure-lib:1.10.0_0.1.6'
 }
 
 // Example for how to get properties into the manifest for reading by the runtime..

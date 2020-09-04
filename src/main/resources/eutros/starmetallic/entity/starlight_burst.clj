@@ -14,11 +14,14 @@
            (hellfirepvp.astralsorcery.client.effect.handler EffectHelper)
            (hellfirepvp.astralsorcery.common.util.data Vector3)
            (hellfirepvp.astralsorcery.client.effect.vfx FXLightbeam)
-           (hellfirepvp.astralsorcery.client.effect.function VFXColorFunction VFXAlphaFunction)
+           (hellfirepvp.astralsorcery.client.effect.function VFXColorFunction)
            (java.util Random)
            (hellfirepvp.astralsorcery.common.util MiscUtils)
            (hellfirepvp.astralsorcery.client.lib EffectTemplatesAS)
-           (net.minecraft.network IPacket))
+           (net.minecraft.network IPacket)
+           (hellfirepvp.astralsorcery.common.constellation IConstellation ConstellationItem ConstellationRegistry)
+           (net.minecraft.network.datasync EntityDataManager DataSerializers)
+           (net.minecraft.util ResourceLocation))
   (:use eutros.clojurelib.lib.class-gen
         eutros.starmetallic.block.light-source
         eutros.starmetallic.lib.obfuscation
@@ -33,6 +36,26 @@
 
 (declare starlight-burst)
 (def random (Random.))
+
+(declare ATTUNED)
+(declare TRAIT)
+
+(defn get-data-manager ^EntityDataManager [^Entity this]
+  (get-protected ^EntityDataManager #obf/obf ^{:obf/srg field_70180_af} dataManager))
+
+(defn get-burst-constellation [^Entity e tag]
+  (ConstellationRegistry/getConstellation
+    (ResourceLocation. (! (get-data-manager e)
+                          (func_187225_a                    ;; get
+                            tag)))))
+
+(defn set-burst-constellation [^Entity e ^IConstellation const tag]
+  (some-> const
+          (.getRegistryName)
+          (str)
+          (#(! (get-data-manager e)
+               (func_187227_b                               ;; set
+                 tag %)))))
 
 (defclass
   EntityBurst (:extends ThrowableEntity)
@@ -65,11 +88,20 @@
                 (* -1
                    (cos-deg yaw)
                    (cos-deg pitch)
-                   vel)))))
+                   vel))))
+
+    (let [stack (! entity
+                   (func_184614_ca                          ;; getHeldItemMainhand
+                     ))
+          item (! stack
+                  (func_77973_b                             ;; getItem
+                    ))]
+      (when (instance? ConstellationItem item)
+        (set-burst-constellation this (.getAttunedConstellation ^ConstellationItem item stack) ATTUNED)
+        (set-burst-constellation this (.getTraitConstellation ^ConstellationItem item stack) TRAIT))))
 
   ^{Override {}}
-  (:method #obf/obf ^{:obf/srg func_70071_h_} tick
-    []
+  (:method #obf/obf ^{:obf/srg func_70071_h_} tick []
     (call-super #obf/obf ^{:obf/srg func_70071_h_} tick)
     (let [world (get-world this)]
       (if (! world field_72995_K                            ;; isRemote
@@ -92,23 +124,28 @@
                           0.1 0.1)
                   (.color VFXColorFunction/WHITE)
                   (.setAlphaMultiplier 0.8)
-                  (.alpha VFXAlphaFunction/FADE_OUT)
                   (.setMaxAge (+ (* (.nextGaussian random) 2)
                                  10))
                   (EffectHelper/refresh EffectTemplatesAS/LIGHTBEAM))
 
               (-> (EffectHelper/of EffectTemplatesAS/GENERIC_PARTICLE)
                   (.spawn (.lastStar this))
-                  (.color VFXColorFunction/WHITE)
+                  (.color (or (when (.nextBoolean random)
+                                (some-> (get-burst-constellation this (if (.nextBoolean random)
+                                                                        ATTUNED
+                                                                        TRAIT))
+                                        (.getConstellationColor)
+                                        (VFXColorFunction/constant)))
+                              VFXColorFunction/WHITE))
                   (.setScaleMultiplier 0.25)
                   (.setMaxAge (+ (* (.nextGaussian random) 2)
                                  10))))))
 
         (let [pos (BlockPos$PooledMutable/retain this)]
           (if (or (not (!! world
-                           (func_180495_p                   ;; getBlockState
-                             pos)
-                           (isAir world pos)))
+                         (func_180495_p                     ;; getBlockState
+                           pos)
+                         (isAir world pos)))
                   (> (! this field_70173_aa                 ;; ticksExisted
                         )
                      200))
@@ -122,7 +159,10 @@
                                            ))))))))))
 
   ^{Override {}}
-  (:method #obf/obf ^{:obf/srg func_70088_a} registerData [])
+  (:method #obf/obf ^{:obf/srg func_70088_a} registerData []
+    (doto (get-data-manager this)
+      (.register ATTUNED "starmetallic:__none")
+      (.register TRAIT "starmetallic:__none")))
 
   ^{Override {}}
   (:method #obf/obf ^{:obf/srg func_70184_a} onImpact [^RayTraceResult rtr])
@@ -141,19 +181,28 @@
       0.01
       0)))
 
+(defn create-string-key []
+  (! EntityDataManager (func_187226_a                       ;; createKey
+                         ^Class EntityBurst
+                         (! DataSerializers field_187194_d  ;; STRING
+                            ))))
+
+(def ATTUNED (create-string-key))
+(def TRAIT (create-string-key))
+
 (def starlight-burst
   (!! (EntityType$Builder/create
         (reify EntityType$IFactory
           (create [_ type world]
             (EntityBurst. type world)))
         EntityClassification/MISC)
-      (func_220321_a                                        ;; size
-        0 0)
-      (setUpdateInterval 10)
-      (setTrackingRange 64)
-      (setShouldReceiveVelocityUpdates true)
-      (func_206865_a                                        ;; build
-        "starlight_burst")))
+    (func_220321_a                                          ;; size
+      0 0)
+    (setUpdateInterval 10)
+    (setTrackingRange 64)
+    (setShouldReceiveVelocityUpdates true)
+    (func_206865_a                                          ;; build
+      "starlight_burst")))
 
 (when-client
   (defn event-clientsetup [_]
