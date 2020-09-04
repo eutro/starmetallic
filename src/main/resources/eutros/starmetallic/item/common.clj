@@ -93,7 +93,7 @@
              )))
 
 (def TAG_ATTUNED (str MODID ":attuned"))
-(def TAG_TRAIT (str MODID ":attuned"))
+(def TAG_TRAIT (str MODID ":trait"))
 
 (defn get-constellation
   [^ItemStack stack

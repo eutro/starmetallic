@@ -75,7 +75,7 @@
 (def TAG_CONSTELLATION "constellation")
 (def TAG_ENTITY "entity")
 
-(def DURATION 1000)
+(def DURATION 200)
 
 (declare get-entity)
 
