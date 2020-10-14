@@ -37,7 +37,7 @@
     (let [item (! ^ItemStack stack (func_77973_b            ;; getItem
                                      ))]
       (-> (.getRegistryName item)
-          (! (func_110624_b                           ;; getNamespace
+          (! (func_110624_b                                 ;; getNamespace
                ))
           (= MODID)))))
 
@@ -107,11 +107,9 @@
                             ))
             cst-item ^ConstellationItem item
             cst (.getActiveConstellation altar)]
-        (when (and (nil? (.getAttunedConstellation cst-item stack))
-                   (instance? IWeakConstellation cst))
+        (when (instance? IWeakConstellation cst)
           (.setAttunedConstellation cst-item stack cst))
-        (when (and (nil? (.getTraitConstellation cst-item stack))
-                   (instance? IMinorConstellation cst))
+        (when (instance? IMinorConstellation cst)
           (.setTraitConstellation cst-item stack cst)))))
 
   (:method doTick [^LogicalSide side
