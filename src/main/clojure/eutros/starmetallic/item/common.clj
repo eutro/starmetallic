@@ -3,7 +3,6 @@
   (:import (net.minecraft.item ItemStack IItemTier Item$Properties ItemGroup)
            net.minecraft.item.crafting.Ingredient
            net.minecraft.world.World
-           net.minecraft.entity.Entity
            net.minecraft.entity.player.PlayerEntity
            hellfirepvp.astralsorcery.common.auxiliary.charge.AlignmentChargeHandler
            net.minecraftforge.fml.LogicalSide
@@ -43,28 +42,26 @@
         (.maxDamage (.getMaxUses tool-tier))
         (.group item-group))))
 
-(defn create-regen
-  [^Integer charge-per-damage ticks-between-regen]
-  (fn
-    [^ItemStack stack
-     ^World world
-     ^Entity entity
-     ^Integer _slot
-     ^Boolean _isSelected]
-    (when (and (not (.isRemote world))
-               (.isDamaged stack)
-               (instance? PlayerEntity entity)
-               (-> (.getGameTime world)
-                   (mod ticks-between-regen)
-                   zero?)
-               (.drainCharge AlignmentChargeHandler/INSTANCE
-                             ^PlayerEntity entity
-                             LogicalSide/SERVER
-                             charge-per-damage
-                             false))
-      (->> (.getDamage stack)
-           (+ -1)
-           (.setDamage stack)))))
+(defn do-regen
+  [charge-per-damage
+   ticks-between-regen
+   ^ItemStack stack
+   ^World world
+   entity]
+  (when (and (not (.isRemote world))
+             (.isDamaged stack)
+             (instance? PlayerEntity entity)
+             (-> (.getGameTime world)
+                 (mod ticks-between-regen)
+                 zero?)
+             (.drainCharge AlignmentChargeHandler/INSTANCE
+                           ^PlayerEntity entity
+                           LogicalSide/SERVER
+                           charge-per-damage
+                           false))
+    (->> (.getDamage stack)
+         (+ -1)
+         (.setDamage stack))))
 
 (def TAG_ATTUNED (str MODID ":attuned"))
 (def TAG_TRAIT (str MODID ":trait"))
