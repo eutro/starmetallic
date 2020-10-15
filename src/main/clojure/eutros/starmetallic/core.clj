@@ -1,4 +1,5 @@
-(ns eutros.starmetallic.Starmetallic
+(ns eutros.starmetallic.core
+  (:require [eutros.starmetallic.compilerhack.clinitfilter])
   (:import java.io.InputStreamReader
            java.util.function.Supplier
            net.minecraftforge.fml.common.Mod

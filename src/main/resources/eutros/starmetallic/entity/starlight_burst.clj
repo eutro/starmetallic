@@ -27,7 +27,7 @@
         eutros.starmetallic.lib.obfuscation
         eutros.starmetallic.lib.sided
         eutros.starmetallic.lib.math
-        eutros.starmetallic.Starmetallic))
+        eutros.starmetallic.core))
 
 (defn get-world
   [^Entity entity]

@@ -4,7 +4,7 @@
            (java.util.function Supplier Predicate BiConsumer Function)
            (net.minecraft.util ResourceLocation)
            (net.minecraftforge.fml.network NetworkEvent$Context))
-  (:use eutros.starmetallic.Starmetallic))
+  (:use eutros.starmetallic.core))
 
 (def PROTOCOL "1")
 

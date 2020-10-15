@@ -1,4 +1,5 @@
 (ns eutros.starmetallic.item.common
+  (:require [eutros.starmetallic.compilerhack.clinitfilter])
   (:import (net.minecraft.item ItemStack IItemTier Item$Properties ItemGroup)
            net.minecraft.item.crafting.Ingredient
            net.minecraft.world.World
@@ -10,52 +11,37 @@
            (hellfirepvp.astralsorcery.common.data.research ResearchHelper GatedKnowledge)
            (net.minecraft.util.text TranslationTextComponent TextFormatting)
            (java.util List))
-  (:use eutros.starmetallic.Starmetallic
-        eutros.starmetallic.lib.obfuscation
-        eutros.starmetallic.lib.sided
-        eutros.clojurelib.lib.class-gen))
+  (:use eutros.starmetallic.core))
 
 (defn should-reequip
   [^ItemStack oldStack
    ^ItemStack newStack
    slotChanged]
   (or slotChanged
-      (not= (! oldStack
-               (func_77973_b                                ;; getItem
-                 ))
-            (! newStack
-               (func_77973_b                                ;; getItem
-                 )))))
+      (not= (.getItem oldStack)
+            (.getItem newStack))))
 
 (def tool-tier
   (reify IItemTier
-    (#obf/obf ^{:obf/srg func_200926_a} getMaxUses [this] 100)
-    (#obf/obf ^{:obf/srg func_200928_b} getEfficiency [this] 7.)
-    (#obf/obf ^{:obf/srg func_200929_c} getAttackDamage [this] 6.)
-    (#obf/obf ^{:obf/srg func_200925_d} getHarvestLevel [this] 4)
-    (#obf/obf ^{:obf/srg func_200927_e} getEnchantability [this] 40)
-    (#obf/obf ^{:obf/srg func_200924_f} getRepairMaterial [this] Ingredient/EMPTY)))
+    (getMaxUses [_] 100)
+    (getEfficiency [_] 7.)
+    (getAttackDamage [_] 6.)
+    (getHarvestLevel [_] 4)
+    (getEnchantability [_] 40)
+    (getRepairMaterial [_] Ingredient/EMPTY)))
 
-#rip/rip ^{}
-(defclass
-  SMItemGroup (:extends ItemGroup)
-  (:constructor [^String label])
-
-  #rip/client ^ItemStack
-  (:method #obf/obf ^{:obf/srg func_151244_d} createIcon []
-    (ItemStack. @(ns-resolve 'eutros.starmetallic.item.starmetal-sword
-                             'starmetal-sword))))
-
-(def item-group (new SMItemGroup MODID))
+(def item-group
+  (when-not *compile-files*
+    (proxy [ItemGroup] [MODID]
+      (createIcon []
+        (ItemStack. @(ns-resolve 'eutros.starmetallic.item.starmetal-sword
+                                 'starmetal-sword))))))
 
 (def default-properties
-  (!! (Item$Properties.)
-    (func_200918_c                                          ;; maxDamage
-      (! tool-tier
-         (func_200926_a                                     ;; getMaxUses
-           )))
-    (func_200916_a                                          ;; group
-      item-group)))
+  (when-not *compile-files*
+    (-> (Item$Properties.)
+        (.maxDamage (.getMaxUses tool-tier))
+        (.group item-group))))
 
 (defn create-regen
   [^Integer charge-per-damage ticks-between-regen]
@@ -63,16 +49,12 @@
     [^ItemStack stack
      ^World world
      ^Entity entity
-     ^Integer slot
-     ^Boolean isSelected]
-    (when (and (not (! world field_72995_K                  ;; isRemote
-                       ))
-               (! stack (func_77951_h                       ;; isDamaged
-                          ))
+     ^Integer _slot
+     ^Boolean _isSelected]
+    (when (and (not (.isRemote world))
+               (.isDamaged stack)
                (instance? PlayerEntity entity)
-               (-> (! world
-                      (func_82737_E                         ;; getGameTime
-                        ))
+               (-> (.getGameTime world)
                    (mod ticks-between-regen)
                    zero?)
                (.drainCharge AlignmentChargeHandler/INSTANCE
@@ -80,20 +62,9 @@
                              LogicalSide/SERVER
                              charge-per-damage
                              false))
-      (! stack (func_196085_b                               ;; setDamage
-                 (- (! stack (func_77952_i                  ;; getDamage
-                               ))
-                    1))))))
-
-(defn get-or-create-tag
-  [^ItemStack stack]
-  (! stack (func_196082_o                                   ;; getOrCreateTag
-             )))
-
-(defn get-tag
-  [^ItemStack stack]
-  (! stack (func_77978_p                                    ;; getTag
-             )))
+      (->> (.getDamage stack)
+           (+ -1)
+           (.setDamage stack)))))
 
 (def TAG_ATTUNED (str MODID ":attuned"))
 (def TAG_TRAIT (str MODID ":trait"))
@@ -102,7 +73,7 @@
   [^ItemStack stack
    ^String key
    ^Class clazz]
-  (when-let [cst (some-> (get-tag stack)
+  (when-let [cst (some-> (.getTag stack)
                          (IConstellation/readFromNBT key))]
     (when (instance? clazz cst) cst)))
 
@@ -112,12 +83,10 @@
    ^String key
    ^Class clazz]
   (if (instance? clazz cst)
-    (do (as-> (get-or-create-tag stack) $
-              (.writeToNBT cst $ key))
+    (do (.writeToNBT cst (.getOrCreateTag stack) key)
         true)
-    (do (some-> (get-tag stack)
-                (! (func_82580_o                            ;; remove
-                     key)))
+    (do (some-> (.getTag stack)
+                (.remove key))
         false)))
 
 (defn add-information [^ConstellationItem item

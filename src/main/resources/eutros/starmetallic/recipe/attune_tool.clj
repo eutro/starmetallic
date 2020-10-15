@@ -20,7 +20,7 @@
            (hellfirepvp.astralsorcery.client.effect.function RefreshFunction)
            (java.util.function BiPredicate)
            (hellfirepvp.astralsorcery.client.effect EntityComplexFX))
-  (:use eutros.starmetallic.Starmetallic
+  (:use eutros.starmetallic.core
         eutros.starmetallic.lib.obfuscation
         eutros.clojurelib.lib.class-gen
         eutros.starmetallic.lib.sided))
