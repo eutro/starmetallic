@@ -1,4 +1,5 @@
 (ns eutros.starmetallic.events
+  (:require [eutros.starmetallic.compilerhack.clinitfilter])
   (:import net.minecraftforge.fml.common.Mod$EventBusSubscriber
            net.minecraftforge.fml.common.Mod$EventBusSubscriber$Bus
            net.minecraftforge.eventbus.api.SubscribeEvent

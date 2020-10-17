@@ -1,6 +1,8 @@
 (ns eutros.starmetallic.packets
-  (:require [eutros.starmetallic.core :as core]
-            [eutros.starmetallic.lib.functions :refer [biconsumer function supplier predicate]])
+  (:require [eutros.starmetallic.compilerhack.clinitfilter]
+            [eutros.starmetallic.core :as core]
+            [eutros.starmetallic.lib.functions :refer [biconsumer function supplier predicate]]
+            [eutros.starmetallic.reference :as rf])
   (:import net.minecraftforge.fml.network.NetworkRegistry
            net.minecraftforge.fml.network.simple.SimpleChannel
            (java.util.function Supplier)
@@ -12,7 +14,7 @@
 (def CHANNEL
   (when-not *compile-files*
     (NetworkRegistry/newSimpleChannel
-      (ResourceLocation. core/MODID "chan")
+      (ResourceLocation. rf/MODID "chan")
       (supplier [] PROTOCOL)
       (predicate [t] (= t PROTOCOL))
       (predicate [t] (= t PROTOCOL)))))

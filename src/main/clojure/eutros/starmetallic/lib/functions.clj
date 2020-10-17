@@ -2,7 +2,7 @@
   (:import (java.util.function BiConsumer
                                Function
                                Supplier
-                               Predicate)))
+                               Predicate Consumer)))
 
 (defn emit-reify
   [class method bindings body]
@@ -21,6 +21,7 @@
           (list `emit-reify class method bindings body))))
 
 (deffunctional biconsumer `BiConsumer 'accept)
+(deffunctional consumer `Consumer 'accept)
 (deffunctional supplier `Supplier 'get)
 (deffunctional predicate `Predicate 'test)
 (deffunctional function `Function 'apply)

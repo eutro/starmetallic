@@ -1,9 +1,11 @@
 (ns eutros.starmetallic.core
-  (:require [eutros.starmetallic.compilerhack.clinitfilter])
-  (:import java.io.InputStreamReader
-           java.util.function.Supplier
-           net.minecraftforge.fml.common.Mod
-           net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext
+  (:require [eutros.starmetallic.compilerhack.clinitfilter]
+            [eutros.starmetallic.reference :as rf]
+            [eutros.starmetallic.item.core :as items])
+  (:import (java.io InputStreamReader)
+           (java.util.function Supplier)
+           (net.minecraftforge.fml.common Mod)
+           (net.minecraftforge.fml.javafmlmod FMLJavaModLoadingContext)
            (net.minecraftforge.registries DeferredRegister
                                           ForgeRegistries)
            org.apache.logging.log4j.LogManager))
@@ -16,22 +18,16 @@
   :main false
   :post-init "post-init")
 
-(def MODID "starmetallic")
-
 (when-not
   *compile-files*
 
-  (def ITEMS
-    (DeferredRegister/create ForgeRegistries/ITEMS
-                             ^String MODID))
-
   (def BLOCKS
     (DeferredRegister/create ForgeRegistries/BLOCKS
-                             ^String MODID))
+                             ^String rf/MODID))
 
   (def ENTITIES
     (DeferredRegister/create ForgeRegistries/ENTITIES
-                             ^String MODID))
+                             ^String rf/MODID))
 
   (defn register [^DeferredRegister registry path]
     (.register registry
@@ -52,17 +48,12 @@
 
   (register ENTITIES 'entity/starlight_burst)
 
-  (register ITEMS 'item/starmetal_sword)
-  (register ITEMS 'item/starmetal_pickaxe)
-  (register ITEMS 'item/starmetal_axe)
-  (register ITEMS 'item/starmetal_hoe)
-
   (load "packets")
   (load "recipe/attune_tool"))
 
 (defn -post-init [_]
   (let [mod-bus (-> (FMLJavaModLoadingContext/get)
                     (.getModEventBus))]
-    (.register ^DeferredRegister ITEMS mod-bus)
+    (items/listen mod-bus)
     (.register ^DeferredRegister ENTITIES mod-bus)
     (.register ^DeferredRegister BLOCKS mod-bus)))

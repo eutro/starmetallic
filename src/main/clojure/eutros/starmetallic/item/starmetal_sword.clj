@@ -1,5 +1,6 @@
 (ns eutros.starmetallic.item.starmetal-sword
-  (:require [eutros.starmetallic.item.common :as cmn]
+  (:require [eutros.starmetallic.compilerhack.clinitfilter]
+            [eutros.starmetallic.item.common :as cmn]
             [eutros.starmetallic.packets :as packets])
   (:import (net.minecraft.item SwordItem
                                Item$Properties
@@ -83,5 +84,3 @@
   [^PlayerInteractEvent$LeftClickEmpty evt]
   (when (check-stack (.getItemStack evt))
     (.sendToServer ^SimpleChannel packets/CHANNEL (PacketBurst.))))
-
-starmetal-sword

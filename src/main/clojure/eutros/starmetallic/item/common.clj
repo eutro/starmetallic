@@ -1,16 +1,16 @@
 (ns eutros.starmetallic.item.common
-  (:require [eutros.starmetallic.compilerhack.clinitfilter])
+  (:require [eutros.starmetallic.compilerhack.clinitfilter]
+            [eutros.starmetallic.reference :as rf])
   (:import (net.minecraft.item ItemStack IItemTier Item$Properties ItemGroup)
-           net.minecraft.item.crafting.Ingredient
-           net.minecraft.world.World
-           net.minecraft.entity.player.PlayerEntity
-           hellfirepvp.astralsorcery.common.auxiliary.charge.AlignmentChargeHandler
-           net.minecraftforge.fml.LogicalSide
+           (net.minecraft.item.crafting Ingredient)
+           (net.minecraft.world World)
+           (net.minecraft.entity.player PlayerEntity)
+           (hellfirepvp.astralsorcery.common.auxiliary.charge AlignmentChargeHandler)
+           (net.minecraftforge.fml LogicalSide)
            (hellfirepvp.astralsorcery.common.constellation IConstellation ConstellationItem)
            (hellfirepvp.astralsorcery.common.data.research ResearchHelper GatedKnowledge)
            (net.minecraft.util.text TranslationTextComponent TextFormatting)
-           (java.util List))
-  (:use eutros.starmetallic.core))
+           (java.util List)))
 
 (defn should-reequip
   [^ItemStack oldStack
@@ -31,7 +31,7 @@
 
 (def item-group
   (when-not *compile-files*
-    (proxy [ItemGroup] [MODID]
+    (proxy [ItemGroup] [rf/MODID]
       (createIcon []
         (ItemStack. @(ns-resolve 'eutros.starmetallic.item.starmetal-sword
                                  'starmetal-sword))))))
@@ -63,8 +63,8 @@
          (+ -1)
          (.setDamage stack))))
 
-(def TAG_ATTUNED (str MODID ":attuned"))
-(def TAG_TRAIT (str MODID ":trait"))
+(def TAG_ATTUNED (str rf/MODID ":attuned"))
+(def TAG_TRAIT (str rf/MODID ":trait"))
 
 (defn get-constellation
   [^ItemStack stack

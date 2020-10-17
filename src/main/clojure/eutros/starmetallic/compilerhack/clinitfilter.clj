@@ -1,6 +1,5 @@
 (ns eutros.starmetallic.compilerhack.clinitfilter
   (:import (org.objectweb.asm ClassReader ClassWriter Opcodes)
-           (java.io File FileOutputStream DataOutputStream BufferedOutputStream)
            (org.apache.commons.io IOUtils)))
 
 (gen-class
