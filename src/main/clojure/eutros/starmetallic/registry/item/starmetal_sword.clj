@@ -3,12 +3,13 @@
             [eutros.starmetallic.registry.item.common :as cmn]
             [eutros.starmetallic.packets :as packets]
             [eutros.starmetallic.lib.events :as events]
-            [eutros.starmetallic.lib.functions :refer [biconsumer function supplier predicate]])
+            [eutros.starmetallic.lib.functions :refer [biconsumer function consumer]]
+            [eutros.starmetallic.registry.entity.entities :as entities])
   (:import (net.minecraft.item SwordItem ItemStack)
            (net.minecraft.entity.player PlayerEntity)
            (net.minecraftforge.event.entity.player PlayerInteractEvent$LeftClickEmpty)
            (net.minecraft.util Hand SoundCategory)
-           (java.util.function Consumer Supplier)
+           (java.util.function Supplier)
            (hellfirepvp.astralsorcery.common.lib SoundsAS)
            (hellfirepvp.astralsorcery.common.item.base AlignmentChargeRevealer)
            (net.minecraftforge.fml.network.simple SimpleChannel)
@@ -50,24 +51,20 @@
 (defn check-stack
   [^ItemStack stack]
   (and (not (.isEmpty stack))
-       (not= (.getItem stack) starmetal-sword)))
+       (= (.getItem stack) starmetal-sword)))
 
 (defn summon-burst
   [^PlayerEntity player]
   (when (and (check-stack (.getHeldItemMainhand player))
              (= (.getCooledAttackStrength player 0) 1.))
-    (as-> ((ns-resolve 'eutros.starmetallic.entity.starlight-burst
-                       '->EntityBurst) player) $
-          (-> player
-              .-world
-              (.addEntity $)))
+    (as-> (entities/->starlight-burst player) $
+          (-> player .-world (.addEntity $)))
     (-> player
         .getHeldItemMainhand
         (.damageItem
           1 player
-          (reify Consumer
-            (accept [_ p]
-              (.sendBreakAnimation ^PlayerEntity p Hand/MAIN_HAND)))))
+          (consumer [p]
+            (.sendBreakAnimation ^PlayerEntity p Hand/MAIN_HAND))))
     (-> player
         .-world
         (.playSound

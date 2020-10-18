@@ -62,7 +62,7 @@
   ([et w]
    [[et w] (Vector3.)])
   ([^LivingEntity le]
-   [starlight-burst le (.getEntityWorld le)]))
+   [[starlight-burst le (.getEntityWorld le)] (Vector3.)]))
 
 (defn eb-post-init
   ([_ _ _])
