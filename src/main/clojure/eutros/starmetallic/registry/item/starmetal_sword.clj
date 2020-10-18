@@ -1,19 +1,21 @@
-(ns eutros.starmetallic.item.starmetal-sword
+(ns eutros.starmetallic.registry.item.starmetal-sword
   (:require [eutros.starmetallic.compilerhack.clinitfilter]
-            [eutros.starmetallic.item.common :as cmn]
-            [eutros.starmetallic.packets :as packets])
+            [eutros.starmetallic.registry.item.common :as cmn]
+            [eutros.starmetallic.packets :as packets]
+            [eutros.starmetallic.lib.events :as events]
+            [eutros.starmetallic.lib.functions :refer [biconsumer function supplier predicate]])
   (:import (net.minecraft.item SwordItem ItemStack)
            (net.minecraft.entity.player PlayerEntity)
-           (eutros.starmetallic.packets PacketBurst)
            (net.minecraftforge.event.entity.player PlayerInteractEvent$LeftClickEmpty)
            (net.minecraft.util Hand SoundCategory)
-           (java.util.function Consumer)
+           (java.util.function Consumer Supplier)
            (hellfirepvp.astralsorcery.common.lib SoundsAS)
            (hellfirepvp.astralsorcery.common.item.base AlignmentChargeRevealer)
            (net.minecraftforge.fml.network.simple SimpleChannel)
            (hellfirepvp.astralsorcery.common.constellation ConstellationItem
                                                            IWeakConstellation
-                                                           IMinorConstellation)))
+                                                           IMinorConstellation)
+           (net.minecraftforge.fml.network NetworkEvent$Context)))
 
 (def starmetal-sword
   (when-not *compile-files*
@@ -78,7 +80,24 @@
           (float 0.8)
           (float 1.4)))))
 
-(defn event-leftclickempty
-  [^PlayerInteractEvent$LeftClickEmpty evt]
-  (when (check-stack (.getItemStack evt))
-    (.sendToServer ^SimpleChannel packets/CHANNEL (PacketBurst.))))
+(deftype PacketBurst [])
+(when-not *compile-files*
+  (.registerMessage
+    ^SimpleChannel packets/CHANNEL
+    1 PacketBurst
+    ;; encoder
+    (biconsumer [_ _] nil)
+    ;; decoder
+    (function [_] (PacketBurst.))
+    ;; handler
+    (biconsumer
+      [_ ctx-supplier]
+      (-> ^Supplier
+          ctx-supplier
+          ^NetworkEvent$Context
+          .get .getSender (summon-burst))))
+  (events/listen
+    PlayerInteractEvent$LeftClickEmpty
+    (fn [^PlayerInteractEvent$LeftClickEmpty evt]
+      (when (check-stack (.getItemStack evt))
+        (.sendToServer ^SimpleChannel packets/CHANNEL (PacketBurst.))))))

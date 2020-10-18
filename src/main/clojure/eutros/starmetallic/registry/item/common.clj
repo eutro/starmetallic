@@ -1,4 +1,4 @@
-(ns eutros.starmetallic.item.common
+(ns eutros.starmetallic.registry.item.common
   (:require [eutros.starmetallic.compilerhack.clinitfilter]
             [eutros.starmetallic.reference :as rf])
   (:import (net.minecraft.item ItemStack IItemTier Item$Properties ItemGroup)

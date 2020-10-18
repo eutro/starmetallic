@@ -1,17 +1,20 @@
-(ns eutros.starmetallic.item.starmetal-hoe
+(ns eutros.starmetallic.registry.item.starmetal-pickaxe
   (:require [eutros.starmetallic.compilerhack.clinitfilter]
-            [eutros.starmetallic.item.common :as cmn])
-  (:import (net.minecraft.item HoeItem)
+            [eutros.starmetallic.registry.item.common :as cmn])
+  (:import (net.minecraft.item PickaxeItem)
            (hellfirepvp.astralsorcery.common.item.base AlignmentChargeRevealer)
            (hellfirepvp.astralsorcery.common.constellation ConstellationItem
                                                            IWeakConstellation
                                                            IMinorConstellation)))
 
-(def starmetal-hoe
+(def starmetal-pickaxe
   (when-not *compile-files*
-    (proxy [HoeItem AlignmentChargeRevealer ConstellationItem]
+    (proxy [PickaxeItem AlignmentChargeRevealer ConstellationItem]
            [;; tier
             cmn/tool-tier
+
+            ;; attackDamage
+            (identity 5)
 
             ;; attackSpeed
             (identity 5.)

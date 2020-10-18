@@ -70,4 +70,16 @@
                                                  (= (.-owner node) "clojure/lang/RT")
                                                  (= (.-name node) "loadClassForName")))))]
         (set! (.-name ^MethodInsnNode invokestatic)
+              "classForNameNonLoading"))))
+
+  (transform (Class/forName "clojure.core$the_class")
+    (fn [cn]
+      (let [method (find-method cn "invokeStatic" "(Ljava/lang/Object;)Ljava/lang/Object;")
+            invokestatic (find-insn method
+                                    #(and (instance? MethodInsnNode %)
+                                          (let [^MethodInsnNode node %]
+                                            (and (= (.getOpcode node) Opcodes/INVOKESTATIC)
+                                                 (= (.-owner node) "clojure/lang/RT")
+                                                 (= (.-name node) "classForName")))))]
+        (set! (.-name ^MethodInsnNode invokestatic)
               "classForNameNonLoading")))))
