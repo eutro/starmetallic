@@ -125,9 +125,9 @@
               altar-pos (.subtract (.clone hover-pos)
                                    0 1.4 0)]
 
-          (when (nil? (:inner-orbital @(.state this)))
+          (when (nil? (:orbital @(.state this)))
             (swap! (.state this)
-                   assoc :inner-orbital
+                   assoc :orbital
                    (-> ^FXSourceOrbital
                        (EffectHelper/spawnSource (FXOrbitalCrystalAttunement. altar-pos
                                                                               hover-pos
