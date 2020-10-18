@@ -12,7 +12,7 @@
            (net.minecraftforge.fml.client.registry RenderingRegistry)
            (hellfirepvp.astralsorcery.client.render.entity RenderEntityEmpty$Factory)
            (hellfirepvp.astralsorcery.client.effect.handler EffectHelper)
-           (hellfirepvp.astralsorcery.common.util.data Vector3)
+           (hellfirepvp.astralsorcery.common.util.data Vector3 Vector3$Quat)
            (hellfirepvp.astralsorcery.client.effect.vfx FXLightbeam)
            (hellfirepvp.astralsorcery.client.effect.function VFXColorFunction)
            (java.util Random)
@@ -40,7 +40,7 @@
 (gen-class
   :name eutros.starmetallic.registry.entity.starlight-burst.EntityBurst
   :extends net.minecraft.entity.projectile.ThrowableEntity
-  :state lastStar
+  :state state
   :constructors {[net.minecraft.entity.EntityType
                   net.minecraft.world.World]
                  [net.minecraft.entity.EntityType
@@ -60,9 +60,13 @@
 
 (defn eb-init
   ([et w]
-   [[et w] (Vector3.)])
+   [[et w]
+    {:last-star   (Vector3.),
+     :from-living false}])
   ([^LivingEntity le]
-   [[starlight-burst le (.getEntityWorld le)] (Vector3.)]))
+   [[starlight-burst le (.getEntityWorld le)]
+    {:last-star   (Vector3. (.getPositionVector le)),
+     :from-living true}]))
 
 (defn eb-post-init
   ([_ _ _])
@@ -71,21 +75,17 @@
                      180)
                   360)
          pitch (mod (- (.rotationPitch entity))
-                    360)
-         vel 0.5]
+                    360)]
      (.superSetRotation this
                         (float yaw)
                         (float pitch))
      (.setMotion this
                  (* (sin-deg yaw)
-                    (cos-deg pitch)
-                    vel)
-                 (* (sin-deg pitch)
-                    vel)
+                    (cos-deg pitch))
+                 (sin-deg pitch)
                  (* -1
                     (cos-deg yaw)
-                    (cos-deg pitch)
-                    vel)))
+                    (cos-deg pitch))))
    (let [stack (.getHeldItemMainhand entity)
          item (.getItem stack)]
      (when (instance? ConstellationItem item)
@@ -96,14 +96,12 @@
   (.superTick this)
   (let [world (.getEntityWorld this)]
     (if (.isRemote world)
-      (when (<= 0.01 (rand))
-        (when (nil? (.lastStar this))
-          (set! (.lastStar this)
-                (Vector3. (.getPositionVector this))))
-
-        (let [burst-pos (Vector3. (.getPositionVector this))]
-          (-> (FXLightbeam. (.clone ^Vector3 (.lastStar this)))
-              (.setup (.clone (doto ^Vector3 (.lastStar this)
+      (when (<= (.nextDouble random) 0.8)
+        (let [burst-pos (Vector3. (.getPositionVector this))
+              ^Vector3
+              last-star (:last-star (.state this))]
+          (-> (FXLightbeam. (.clone last-star))
+              (.setup (.clone (doto last-star
                                 (.setX (.getX burst-pos))
                                 (.setY (.getY burst-pos))
                                 (.setZ (.getZ burst-pos))
@@ -117,7 +115,7 @@
               (EffectHelper/refresh EffectTemplatesAS/LIGHTBEAM))
 
           (-> (EffectHelper/of EffectTemplatesAS/GENERIC_PARTICLE)
-              (.spawn (.lastStar this))
+              (.spawn last-star)
               (.color (or (when (.nextBoolean random)
                             (some-> (get-burst-constellation this (if (.nextBoolean random)
                                                                     ATTUNED
@@ -132,13 +130,32 @@
       (let [pos (BlockPos$PooledMutable/retain this)]
         (if (or (not (.isAirBlock world pos))
                 (> (.ticksExisted this)
-                   200))
-          (.remove this)
+                   40))
+          (do (.remove this)
+              (when (:from-living (.state this))
+                (let [motion (-> this .getMotion Vector3. .perpendicular .normalize (.multiply 0.05))
+                      quat (-> this .getMotion Vector3. .normalize
+                               (Vector3$Quat/buildQuatFrom3DVector (/ Math/PI 4)))]
+                  (dotimes [_ 8]
+                    (.rotateWithMagnitude quat motion)
+                    (doto (EntityBurst. starlight-burst world)
+                      (.setPosition (.getPosX this)
+                                    (.getPosY this)
+                                    (.getPosZ this))
+                      (-> .state ^Vector3 (:last-star)
+                          (.setX (.getPosX this))
+                          (.setY (.getPosY this))
+                          (.setZ (.getPosZ this)))
+                      (.setMotion (.getX motion)
+                                  (.getY motion)
+                                  (.getZ motion))
+                      (set-burst-constellation (get-burst-constellation this ATTUNED) ATTUNED)
+                      (set-burst-constellation (get-burst-constellation this TRAIT) TRAIT)
+                      (->> (.addEntity world)))))))
 
-          (when (< 0.1 (Math/random))
-            (.setBlockState world
-                            (BlockPos$PooledMutable/retain this)
-                            (.getDefaultState ^Block (blocks/light-source)))))))))
+          (.setBlockState world
+                          (BlockPos$PooledMutable/retain this)
+                          (.getDefaultState ^Block (blocks/light-source))))))))
 
 (defn eb-registerData [^EntityBurst this]
   (doto (.dataManager this)
@@ -150,11 +167,7 @@
 (defn eb-createSpawnPacket [^EntityBurst this]
   (NetworkHooks/getEntitySpawningPacket this))
 
-(defn eb-getGravityVelocity [^EntityBurst this]
-  (if (> (.ticksExisted this)
-         60)
-    0.01
-    0))
+(defn eb-getGravityVelocity [_] 0)
 
 #_`[eb-init
     eb-post-init
