@@ -1,100 +1,70 @@
 (ns eutros.starmetallic.compilerhack.clinitfilter
-  (:import (org.objectweb.asm ClassReader ClassWriter Opcodes)
-           (org.apache.commons.io IOUtils)))
+  (:require [instrumentation.core :refer [INSTRUMENTATION]]
+            [instrumentation.dynamic :refer [attach]])
+  (:import (java.lang.instrument Instrumentation ClassFileTransformer)
+           (org.objectweb.asm ClassReader ClassWriter Opcodes)
+           (org.objectweb.asm.tree ClassNode MethodNode MethodInsnNode)))
 
-(gen-class
-  :name eutros.starmetallic.compilerhack.clinitfilter.NoClinitClassLoader
-  :extends ClassLoader
-  :constructors {[ClassLoader] [ClassLoader]}
-  :prefix nccl-
-  :exposes-methods {loadClass       superLoadClass
-                    resolveClass    superResolveClass
-                    findLoadedClass superFindLoadedClass
-                    defineClass     superDefineClass})
+(attach)
 
-(gen-class
-  :name eutros.starmetallic.compilerhack.clinitfilter.NoClinitClassVisitor
-  :extends org.objectweb.asm.ClassVisitor
-  :constructors {[int org.objectweb.asm.ClassVisitor] [int org.objectweb.asm.ClassVisitor]}
-  :exposes-methods {visitMethod superVisitMethod}
-  :exposes {cv {:get getDelegate}}
-  :prefix nccv-)
+(defn transform
+  [class func]
+  (let [transformer
+        (reify ClassFileTransformer
+          (transform [_ _ _ cbr _ buf]
+            (try
+              (when (= class cbr)
+                (let [cn (ClassNode.)]
+                  (.accept (ClassReader. buf) cn 0)
+                  (func cn)
+                  (.toByteArray
+                    (doto (ClassWriter. ClassWriter/COMPUTE_FRAMES)
+                      (->> (.accept cn))))))
+              (catch Throwable t#
+                (.printStackTrace t#)))))]
+    (println "Redefining class:" class)
+    (doto ^Instrumentation INSTRUMENTATION
+      (.addTransformer transformer true)
+      (.retransformClasses (into-array [class]))
+      (.removeTransformer transformer))
+    (println "Redefined class:" class)))
 
-(import (eutros.starmetallic.compilerhack.clinitfilter NoClinitClassLoader
-                                                       NoClinitClassVisitor))
+(defn find-method
+  [^ClassNode node name desc]
+  (some (fn [^MethodNode node]
+          (and (= (.-name node) name)
+               (= (.-desc node) desc)
+               node))
+        (.-methods node)))
 
-(defn nccv-visitMethod
-  [^NoClinitClassVisitor this
-   access
-   name
-   descriptor
-   signature
-   exceptions]
-  (when (not= "<clinit>" name)
-    (.superVisitMethod this
-                       access
-                       name
-                       descriptor
-                       signature
-                       exceptions)))
+(defn find-insn
+  [^MethodNode node predicate]
+  (some #(and (predicate %)
+              %)
+        (.-instructions node)))
 
-(defn strip-clinit?
-  [class-name]
-  (re-matches #"(.*\.proxy\$)?net\.minecraft(forge)?\..+" class-name))
+(transform Compiler
+  (fn [cn]
+    (let [method (find-method cn
+                              "maybeResolveIn"
+                              "(Lclojure/lang/Namespace;Lclojure/lang/Symbol;)Ljava/lang/Object;")
+          invokestatic (find-insn method
+                                  #(and (instance? MethodInsnNode %)
+                                        (let [^MethodInsnNode node %]
+                                          (and (= (.getOpcode node) Opcodes/INVOKESTATIC)
+                                               (= (.-owner node) "clojure/lang/RT")
+                                               (= (.-name node) "classForName")))))]
+      (set! (.-name ^MethodInsnNode invokestatic)
+            "classForNameNonLoading"))))
 
-(defn strip-clinit [class-bytes]
-  (let [cr (ClassReader. ^bytes class-bytes)]
-    (if (= "java/lang/Enum" (.getSuperName cr))
-      class-bytes
-      (. ^ClassWriter
-         (. (doto (NoClinitClassVisitor. Opcodes/ASM7
-                                         (ClassWriter. cr 0))
-              (as-> $ (.accept cr $ 0)))
-            (getDelegate))
-         (toByteArray)))))
-
-(defn get-class-bytes
-  [^ClassLoader this
-   ^String name]
-  (-> name
-      (.replace \. \/)
-      (.concat ".class")
-      (->> (.getResource this))
-      (IOUtils/toByteArray)))
-
-(defn load-without-clinit
-  [^NoClinitClassLoader this
-   ^String name]
-  (println "Loading without clinit:" name)
-  (let [class-bytes (strip-clinit (get-class-bytes this name))]
-    (.superDefineClass this
-                       name
-                       class-bytes
-                       0
-                       (int (alength class-bytes)))))
-
-(defn nccl-loadClass
-  ([^NoClinitClassLoader this
-    ^String name]
-   (.superLoadClass this name))
-  ([^NoClinitClassLoader this
-    ^String name
-    resolve]
-   (println "Loading class:" name)
-   (or (if (strip-clinit? name)
-         (try (let [cls (or (.superFindLoadedClass this name)
-                            (load-without-clinit this name))]
-                (when resolve
-                  (.superResolveClass this cls))
-                cls)
-              (catch ClassNotFoundException _ nil)
-              (catch SecurityException _ nil)))
-       (.superLoadClass this name resolve))))
-
-#_[`nccl-loadClass `nccv-visitMethod]
-
-(when *compile-files*
-  (let [thread (Thread/currentThread)]
-    (.setContextClassLoader thread
-                            (new NoClinitClassLoader
-                                 (.getContextClassLoader thread)))))
+(transform (Class/forName "clojure.core$get_proxy_class")
+  (fn [cn]
+    (let [method (find-method cn "invokeStatic" "(Lclojure/lang/ISeq;)Ljava/lang/Object;")
+          invokestatic (find-insn method
+                                  #(and (instance? MethodInsnNode %)
+                                        (let [^MethodInsnNode node %]
+                                          (and (= (.getOpcode node) Opcodes/INVOKESTATIC)
+                                               (= (.-owner node) "clojure/lang/RT")
+                                               (= (.-name node) "loadClassForName")))))]
+      (set! (.-name ^MethodInsnNode invokestatic)
+            "classForNameNonLoading"))))

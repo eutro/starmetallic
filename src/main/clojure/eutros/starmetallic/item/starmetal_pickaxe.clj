@@ -1,12 +1,7 @@
 (ns eutros.starmetallic.item.starmetal-pickaxe
   (:require [eutros.starmetallic.compilerhack.clinitfilter]
             [eutros.starmetallic.item.common :as cmn])
-  (:import (net.minecraft.item PickaxeItem
-                               Item$Properties
-                               IItemTier
-                               ItemStack)
-           (net.minecraft.world World)
-           (net.minecraft.entity Entity)
+  (:import (net.minecraft.item PickaxeItem)
            (hellfirepvp.astralsorcery.common.item.base AlignmentChargeRevealer)
            (hellfirepvp.astralsorcery.common.constellation ConstellationItem
                                                            IWeakConstellation
@@ -16,23 +11,23 @@
   (when-not *compile-files*
     (proxy [PickaxeItem AlignmentChargeRevealer ConstellationItem]
            [;; tier
-            ^IItemTier cmn/tool-tier
+            cmn/tool-tier
 
             ;; attackDamage
-            ^int (identity 5)
+            (identity 5)
 
             ;; attackSpeed
-            ^float (identity 5.)
+            (identity 5.)
 
             ;; properties
-            ^Item$Properties cmn/default-properties]
+            cmn/default-properties]
       (addInformation [stack _worldIn tooltip _flagIn]
         (cmn/add-information this stack tooltip))
-      (inventoryTick [^ItemStack stack ^World world ^Entity entity ^int _slot ^boolean _isSelected]
+      (inventoryTick [stack world entity _slot _isSelected]
         (cmn/do-regen 200 100 stack world entity))
       (shouldCauseReequipAnimation [oldStack newStack slotChanged]
         (cmn/should-reequip oldStack newStack slotChanged))
-      (getAttunedConstellation [^ItemStack stack]
+      (getAttunedConstellation [stack]
         (cmn/get-constellation stack cmn/TAG_ATTUNED IWeakConstellation))
       (setAttunedConstellation [stack cst]
         (cmn/set-constellation stack cst cmn/TAG_ATTUNED IWeakConstellation))

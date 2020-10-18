@@ -1,6 +1,5 @@
 (ns eutros.starmetallic.packets
   (:require [eutros.starmetallic.compilerhack.clinitfilter]
-            [eutros.starmetallic.core :as core]
             [eutros.starmetallic.lib.functions :refer [biconsumer function supplier predicate]]
             [eutros.starmetallic.reference :as rf])
   (:import net.minecraftforge.fml.network.NetworkRegistry

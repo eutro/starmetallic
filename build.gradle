@@ -127,6 +127,8 @@ dependencies {
 
     implementation 'eutros.clojurelib:clojure-lib:1.10.0_0.1.13'
     implementation 'org.clojure:clojure:1.10.0'
+
+    compileOnly files('instrumentation/target/uberjar/Instrumentation-Clj.jar')
 }
 
 // Example for how to get properties into the manifest for reading by the runtime..

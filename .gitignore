@@ -28,3 +28,4 @@ forge*changelog.txt
 /.idea/
 /build/
 /.gradle/
+/instrumentation/target/

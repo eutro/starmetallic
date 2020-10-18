@@ -3,8 +3,7 @@
             [eutros.starmetallic.lib.events :as evt]
             [eutros.starmetallic.reference :as rf])
   (:import (net.minecraftforge.event RegistryEvent$Register)
-           (net.minecraft.item Item)
-           (net.minecraftforge.registries IForgeRegistry)
+           (net.minecraftforge.registries IForgeRegistry IForgeRegistryEntry)
            (net.minecraft.util ResourceLocation)))
 
 (when *compile-files*
@@ -21,13 +20,16 @@
 (defn register
   [registry item path]
   (.register ^IForgeRegistry registry
-             (doto item
+             (doto ^IForgeRegistryEntry item
                (.setRegistryName (ResourceLocation. rf/MODID path)))))
 
 (defn listen [bus]
   (evt/listen-generic
     bus
-    RegistryEvent$Register Item
+    RegistryEvent$Register
+    (Class/forName "net.minecraft.item.Item"
+                   false
+                   (.getContextClassLoader (Thread/currentThread)))
     (fn [^RegistryEvent$Register event]
       (require '(eutros.starmetallic.item starmetal-axe
                                           starmetal-hoe

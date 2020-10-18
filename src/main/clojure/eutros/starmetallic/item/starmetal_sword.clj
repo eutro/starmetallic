@@ -2,10 +2,7 @@
   (:require [eutros.starmetallic.compilerhack.clinitfilter]
             [eutros.starmetallic.item.common :as cmn]
             [eutros.starmetallic.packets :as packets])
-  (:import (net.minecraft.item SwordItem
-                               Item$Properties
-                               IItemTier
-                               ItemStack)
+  (:import (net.minecraft.item SwordItem ItemStack)
            (net.minecraft.entity.player PlayerEntity)
            (eutros.starmetallic.packets PacketBurst)
            (net.minecraftforge.event.entity.player PlayerInteractEvent$LeftClickEmpty)
@@ -22,16 +19,16 @@
   (when-not *compile-files*
     (proxy [SwordItem AlignmentChargeRevealer ConstellationItem]
            [;; tier
-            ^IItemTier cmn/tool-tier
+            cmn/tool-tier
 
             ;; attackDamage
-            ^int (identity 5)
+            (identity 5)
 
             ;; attackSpeed
-            ^float (identity 5.)
+            (identity 5.)
 
             ;; properties
-            ^Item$Properties cmn/default-properties]
+            cmn/default-properties]
       (addInformation [stack _worldIn tooltip _flagIn]
         (cmn/add-information this stack tooltip))
       (inventoryTick [stack world entity _slot _isSelected]
