@@ -1,8 +1,7 @@
 (ns eutros.starmetallic.lib.functions
-  (:import (java.util.function BiConsumer
-                               Function
-                               Supplier
-                               Predicate Consumer)))
+  (:import (java.util.function BiConsumer Function
+                               Supplier Predicate
+                               Consumer BiPredicate)))
 
 (defn emit-reify
   [class method bindings body]
@@ -21,6 +20,7 @@
           (list `emit-reify class method bindings body))))
 
 (deffunctional biconsumer `BiConsumer 'accept)
+(deffunctional bipredicate `BiPredicate 'test)
 (deffunctional consumer `Consumer 'accept)
 (deffunctional supplier `Supplier 'get)
 (deffunctional predicate `Predicate 'test)

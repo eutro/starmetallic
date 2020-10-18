@@ -42,7 +42,8 @@
       (getTraitConstellation [stack]
         (cmn/get-constellation stack cmn/TAG_TRAIT IMinorConstellation))
       (setTraitConstellation [stack cst]
-        (cmn/set-constellation stack cst cmn/TAG_TRAIT IMinorConstellation)))))
+        (cmn/set-constellation stack cst cmn/TAG_TRAIT IMinorConstellation))
+      (shouldReveal [_stack] true))))
 
 (defn check-stack
   [^ItemStack stack]

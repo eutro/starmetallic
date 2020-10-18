@@ -1,6 +1,7 @@
 (ns eutros.starmetallic.recipe.attune-tool
   (:require [eutros.starmetallic.compilerhack.clinitfilter]
-            [eutros.starmetallic.reference :as rf])
+            [eutros.starmetallic.reference :as rf]
+            [eutros.starmetallic.lib.functions :refer [bipredicate]])
   (:import (hellfirepvp.astralsorcery.common.crafting.nojson AttunementCraftingRegistry)
            (hellfirepvp.astralsorcery.common.crafting.nojson.attunement AttunementRecipe AttunementRecipe$Active)
            (net.minecraft.util ResourceLocation)
@@ -20,7 +21,6 @@
            (hellfirepvp.astralsorcery.client.effect.source.orbital FXOrbitalCrystalAttunement)
            (hellfirepvp.astralsorcery.client.effect.source FXSourceOrbital)
            (hellfirepvp.astralsorcery.client.effect.function RefreshFunction)
-           (java.util.function BiPredicate)
            (hellfirepvp.astralsorcery.client.effect EntityComplexFX)))
 
 (defn applicable-constellation?
@@ -39,15 +39,12 @@
   [^TileAttunementAltar altar]
   (when-some [cst (.getActiveConstellation altar)]
     (let [box (-> altar .getPos .up AxisAlignedBB. (.grow 1))
-          vec (.add (Vector3. altar)
-                    0.5 1.5 0.5)
-          items (-> altar
-                    .getWorld
-                    (.getEntitiesWithinAABB ItemEntity box))]
+          items (-> altar .getWorld (.getEntitiesWithinAABB ItemEntity box))]
       (when-not (empty? items)
         (let [closest (apply min-key
                              #(->> (.getPositionVector ^ItemEntity %)
-                                   (.distanceSquared vec))
+                                   (.distanceSquared (.add (Vector3. altar)
+                                                           0.5 1.5 0.5)))
                              items)]
           (when (applicable-constellation? closest cst)
             closest))))))
@@ -82,8 +79,8 @@
 (import eutros.starmetallic.recipe.attune_tool.ActiveAttuneTool)
 
 (defn aat-init
-  ([recipe constellation entity]
-   [[recipe] (atom {:entity        entity
+  ([recipe constellation entity-id]
+   [[recipe] (atom {:entity-id     entity-id
                     :constellation constellation})])
   ([recipe nbt]
    [[recipe] (atom {})]))
@@ -101,13 +98,12 @@
 (defn aat-finishRecipe [^ActiveAttuneTool this ^TileAttunementAltar altar]
   (when-some [entity ^ItemEntity (get-entity this altar)]
     (let [stack (.getItem entity)
-          item (.getItem stack)
-          cst-item ^ConstellationItem item
+          item ^ConstellationItem (.getItem stack)
           cst (.getActiveConstellation altar)]
       (when (instance? IWeakConstellation cst)
-        (.setAttunedConstellation cst-item stack cst))
+        (.setAttunedConstellation item stack cst))
       (when (instance? IMinorConstellation cst)
-        (.setTraitConstellation cst-item stack cst)))))
+        (.setTraitConstellation item stack cst)))))
 
 (defn aat-doTick [^ActiveAttuneTool this
                   ^LogicalSide side
@@ -142,9 +138,9 @@
                        (.setTicksPerRotation 300)
                        (.refresh (RefreshFunction/tileExistsAnd
                                    altar
-                                   (reify BiPredicate
-                                     (test [_ t _] (and (.canPlayConstellationActiveEffects ^TileAttunementAltar t)
-                                                        (= (.getActiveRecipe altar) this)))))))))
+                                   (bipredicate [t _]
+                                     (and (.canPlayConstellationActiveEffects ^TileAttunementAltar t)
+                                          (= (.getActiveRecipe altar) this))))))))
 
           )))))
 
@@ -154,11 +150,11 @@
 
 (defn aat-matches [^ActiveAttuneTool this ^TileAttunementAltar altar]
   (and (.superMatches this ^TileAttunementAltar altar)
-       (when-some [entity (get-entity this altar)]
-         (applicable-constellation? entity
-                                    (.getActiveConstellation altar)))
-       (= (:constellation @(.state this))
-          (.getActiveConstellation altar))))
+       (let [active-constellation
+             (.getActiveConstellation altar)]
+         (some-> (get-entity this altar) (applicable-constellation? active-constellation))
+         (-> this .state deref :constellation
+             (= active-constellation)))))
 
 (defn aat-writeToNBT [^ActiveAttuneTool this ^CompoundNBT nbt]
   (.superWriteToNBT this nbt)
@@ -189,28 +185,26 @@
   (when (.isFinished this altar)
     ;; TODO sound
     )
-  (when-some [orbital ^EntityComplexFX (:inner-orbital @(.state this))]
-    (.requestRemoval orbital))
-
-  (when-some [flare ^EntityComplexFX (:flare @(.state this))]
-    (.requestRemoval flare)))
+  (let [{:keys [orbital flare]}
+        @(.state this)]
+    (some-> orbital .requestRemoval)
+    (some-> flare .requestRemoval)))
 
 (defn ^ItemEntity
   get-entity
   [^ActiveAttuneTool this ^TileEntity tile]
-  (when-some [entity ^Entity (some-> tile
-                                     .getWorld
-                                     (.getEntityByID (:entity-id @(.state this))))]
-    (when (and (.isAlive entity)
+  (let [entity (some-> tile .getWorld (.getEntityByID (-> this .state deref :entity-id)))]
+    (when (and entity
+               (.isAlive ^Entity entity)
                (instance? ItemEntity entity))
       entity)))
 
 (def recipe
   (proxy [AttunementRecipe] [(ResourceLocation. rf/MODID "attune_tools")]
     (canStartCrafting [^TileAttunementAltar altar]
-      (and (some-> (.getWorld altar)
-                   (DayTimeHelper/isNight))
-           (some? (find-tool altar))))
+      (boolean
+        (and (some-> altar .getWorld DayTimeHelper/isNight)
+             (find-tool altar))))
     (createRecipe [^TileAttunementAltar altar]
       (ActiveAttuneTool. recipe
                          (.getActiveConstellation altar)
