@@ -213,7 +213,8 @@
     (deserialize [^TileAttunementAltar _ ^CompoundNBT cmp ^AttunementRecipe$Active _]
       (ActiveAttuneTool. recipe cmp))))
 
-#_`[aat-init aat-post-init
+#_`[aat-init
+    aat-post-init
     aat-stopCrafting
     aat-finishRecipe
     aat-doTick

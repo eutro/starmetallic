@@ -48,6 +48,9 @@ minecraft {
             // Recommended logging level for the console
             property 'forge.logging.console.level', 'debug'
 
+            // launch a REPL server
+            property 'clojure.server.repl', '{:port 5555 :accept clojure.core.server/repl}'
+
             mods {
                 starmetallic {
                     source sourceSets.main
@@ -63,6 +66,9 @@ minecraft {
 
             // Recommended logging level for the console
             property 'forge.logging.console.level', 'debug'
+
+            // launch a REPL server
+            property 'clojure.server.repl', '{:port 5555 :accept clojure.core.server/repl}'
 
             args 'nogui'
 
