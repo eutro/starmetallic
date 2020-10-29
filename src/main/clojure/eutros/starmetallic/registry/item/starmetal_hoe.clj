@@ -1,7 +1,8 @@
 (ns eutros.starmetallic.registry.item.starmetal-hoe
   (:require [eutros.starmetallic.compilerhack.clinitfilter]
             [eutros.starmetallic.registry.item.common :as cmn]
-            [eutros.starmetallic.lib.functions :refer [consumer]])
+            [eutros.starmetallic.lib.functions :refer [consumer]]
+            [eutros.starmetallic.registry.entity.entities :as entities])
   (:import (net.minecraft.item HoeItem ItemUseContext)
            (hellfirepvp.astralsorcery.common.item.base AlignmentChargeRevealer)
            (hellfirepvp.astralsorcery.common.constellation ConstellationItem
@@ -13,7 +14,8 @@
            (hellfirepvp.astralsorcery.common.lib SoundsAS ColorsAS)
            (hellfirepvp.astralsorcery.client.effect.source.orbital FXOrbitalCollector)
            (hellfirepvp.astralsorcery.common.util.data Vector3)
-           (hellfirepvp.astralsorcery.client.effect.handler EffectHelper)))
+           (hellfirepvp.astralsorcery.client.effect.handler EffectHelper)
+           (net.minecraft.entity Entity)))
 
 (declare hoe-effect)
 
@@ -54,11 +56,10 @@
       (let [player (.getPlayer context)
             world (.getWorld context)
             item (.getItem context)
+            ctxPos (.getPos context)
             it (.iterator (BlockPos/getAllInBoxMutable
-                            (-> (.getPos context)
-                                (.add -1 0 -1))
-                            (-> (.getPos context)
-                                (.add 1 0 1))))]
+                            (-> ctxPos (.add -1 0 -1))
+                            (-> ctxPos (.add 1 0 1))))]
         (while (.hasNext it)
           (let [pos ^BlockPos (.next it)]
             (when (.isAirBlock world (.up pos))
@@ -74,34 +75,41 @@
                         (.sendBreakAnimation player (.getHand context))))))))))
         (.playSound world
                     player
-                    (.getPos context)
+                    ctxPos
                     SoundsAS/ILLUMINATION_WAND_LIGHT
                     SoundCategory/BLOCKS
                     1.0 1.4)
-        (when (.isRemote world)
-          (let [attuned (.getAttunedConstellation ^ConstellationItem (.getItem item) item)
-                trait (.getTraitConstellation ^ConstellationItem (.getItem item) item)
-                pos (-> context .getPos Vector3.
-                        (.add (float 0.5)
-                              (float 1)
-                              (float 0.5)))]
-            (-> (FXOrbitalCollector. pos ColorsAS/DYE_WHITE)
-                (.setBranches (inc (+ (if attuned 0 1)
-                                      (if trait 0 1))))
-                (.setTicksPerRotation 30)
-                (EffectHelper/spawnSource))
-            (when attuned
-              (-> (FXOrbitalCollector. pos (.getConstellationColor attuned))
-                  (.setBranches (if trait 1 2))
+        (let [attuned (.getAttunedConstellation ^ConstellationItem (.getItem item) item)
+              trait (.getTraitConstellation ^ConstellationItem (.getItem item) item)]
+          (try (.addEntity world
+                           (doto ^Entity (entities/->farmland-sentinel world attuned trait)
+                             (.setPosition (-> ctxPos .getX (+ 0.5))
+                                           (-> ctxPos .getY inc)
+                                           (-> ctxPos .getZ (+ 0.5)))))
+               (catch Exception e
+                 (.printStackTrace e)))
+          (when (.isRemote world)
+            (let [pos (-> context .getPos Vector3.
+                          (.add (float 0.5)
+                                (float 1)
+                                (float 0.5)))]
+              (-> (FXOrbitalCollector. pos ColorsAS/DYE_WHITE)
+                  (.setBranches (inc (+ (if attuned 0 1)
+                                        (if trait 0 1))))
                   (.setTicksPerRotation 30)
-                  (.setTickOffset (if trait 10 15))
-                  (EffectHelper/spawnSource)))
-            (when trait
-              (-> (FXOrbitalCollector. pos (.getConstellationColor trait))
-                  (.setBranches (if attuned 1 2))
-                  (.setTicksPerRotation 30)
-                  (.setTickOffset (if attuned 10 15))
-                  (EffectHelper/spawnSource)))))
+                  (EffectHelper/spawnSource))
+              (when attuned
+                (-> (FXOrbitalCollector. pos (.getConstellationColor attuned))
+                    (.setBranches (if trait 1 2))
+                    (.setTicksPerRotation 30)
+                    (.setTickOffset (if trait 10 15))
+                    (EffectHelper/spawnSource)))
+              (when trait
+                (-> (FXOrbitalCollector. pos (.getConstellationColor trait))
+                    (.setBranches (if attuned 1 2))
+                    (.setTicksPerRotation 30)
+                    (.setTickOffset (if attuned 10 15))
+                    (EffectHelper/spawnSource))))))
         ActionResultType/SUCCESS)
       (if (>= hook 0)
         ActionResultType/SUCCESS

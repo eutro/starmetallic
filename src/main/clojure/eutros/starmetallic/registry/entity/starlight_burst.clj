@@ -1,12 +1,9 @@
 (ns eutros.starmetallic.registry.entity.starlight-burst
   (:require [eutros.starmetallic.compilerhack.clinitfilter]
             [eutros.starmetallic.lib.math :refer [sin-deg cos-deg]]
-            [eutros.starmetallic.registry.block.blocks :as blocks])
-  (:import (net.minecraft.entity Entity
-                                 EntityType$Builder
-                                 EntityType$IFactory
-                                 EntityClassification
-                                 LivingEntity)
+            [eutros.starmetallic.registry.block.blocks :as blocks]
+            [eutros.starmetallic.registry.entity.entity-common :as cmn])
+  (:import (net.minecraft.entity EntityType$Builder EntityType$IFactory EntityClassification LivingEntity)
            (net.minecraft.util.math RayTraceResult BlockPos$PooledMutable)
            (net.minecraftforge.fml.network NetworkHooks)
            (net.minecraftforge.fml.client.registry RenderingRegistry)
@@ -18,9 +15,8 @@
            (java.util Random)
            (hellfirepvp.astralsorcery.common.util MiscUtils)
            (hellfirepvp.astralsorcery.client.lib EffectTemplatesAS)
-           (hellfirepvp.astralsorcery.common.constellation IConstellation ConstellationItem ConstellationRegistry)
+           (hellfirepvp.astralsorcery.common.constellation ConstellationItem)
            (net.minecraft.network.datasync EntityDataManager DataSerializers)
-           (net.minecraft.util ResourceLocation)
            (net.minecraft.block Block)
            (hellfirepvp.astralsorcery.client.effect EntityVisualFX)))
 
@@ -30,15 +26,8 @@
 (declare ATTUNED)
 (declare TRAIT)
 
-(defn get-burst-constellation [^Entity e tag]
-  (-> e .-dataManager (.get tag) ResourceLocation. ConstellationRegistry/getConstellation))
-
-(defn set-burst-constellation [^Entity e ^IConstellation const tag]
-  (some-> const .getRegistryName str
-          (->> (.set (.-dataManager e) tag))))
-
 (gen-class
-  :name eutros.starmetallic.registry.entity.starlight-burst.EntityBurst
+  :name eutros.starmetallic.registry.entity.EntityBurst
   :extends net.minecraft.entity.projectile.ThrowableEntity
   :state state
   :constructors {[net.minecraft.entity.EntityType
@@ -56,7 +45,7 @@
   :post-init post-init
   :prefix eb-)
 
-(import eutros.starmetallic.registry.entity.starlight-burst.EntityBurst)
+(import eutros.starmetallic.registry.entity.EntityBurst)
 
 (defn eb-init
   ([et w]
@@ -89,8 +78,8 @@
    (let [stack (.getHeldItemMainhand entity)
          item (.getItem stack)]
      (when (instance? ConstellationItem item)
-       (set-burst-constellation this (.getAttunedConstellation ^ConstellationItem item stack) ATTUNED)
-       (set-burst-constellation this (.getTraitConstellation ^ConstellationItem item stack) TRAIT)))))
+       (cmn/set-constellation this (.getAttunedConstellation ^ConstellationItem item stack) ATTUNED)
+       (cmn/set-constellation this (.getTraitConstellation ^ConstellationItem item stack) TRAIT)))))
 
 (defn eb-tick [^EntityBurst this]
   (.superTick this)
@@ -117,7 +106,7 @@
           (-> (EffectHelper/of EffectTemplatesAS/GENERIC_PARTICLE)
               (.spawn last-star)
               (.color (or (when (.nextBoolean random)
-                            (some-> (get-burst-constellation this (if (.nextBoolean random)
+                            (some-> (cmn/get-constellation this (if (.nextBoolean random)
                                                                     ATTUNED
                                                                     TRAIT))
                                     (.getConstellationColor)
@@ -149,8 +138,8 @@
                       (.setMotion (.getX motion)
                                   (.getY motion)
                                   (.getZ motion))
-                      (set-burst-constellation (get-burst-constellation this ATTUNED) ATTUNED)
-                      (set-burst-constellation (get-burst-constellation this TRAIT) TRAIT)
+                      (cmn/set-constellation (cmn/get-constellation this ATTUNED) ATTUNED)
+                      (cmn/set-constellation (cmn/get-constellation this TRAIT) TRAIT)
                       (->> (.addEntity world)))))))
 
           (.setBlockState world
