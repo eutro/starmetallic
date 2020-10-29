@@ -49,61 +49,60 @@
 (defn hoe-effect
   [^ItemUseContext context]
   (let [hook (ForgeEventFactory/onHoeUse context)]
-    (if (zero? hook)
+    (if (and (zero? hook)
+             (not= Direction/DOWN (.getFace context)))
       (let [player (.getPlayer context)
             world (.getWorld context)
-            item (.getItem context)]
-        (if (not= Direction/DOWN (.getFace context))
-          (let [it (.iterator (BlockPos/getAllInBoxMutable
-                                (-> (.getPos context)
-                                    (.add -1 0 -1))
-                                (-> (.getPos context)
-                                    (.add 1 0 1))))]
-            (while (.hasNext it)
-              (let [pos ^BlockPos (.next it)]
-                (when (.isAirBlock world (.up pos))
-                  (when-some [new-state
-                              (get HoeItem/HOE_LOOKUP
-                                   (-> world (.getBlockState pos) .getBlock))]
-                    (when-not (.isRemote world)
-                      (.setBlockState world pos new-state)
-                      (when player
-                        (.damageItem
-                          item 1 player
-                          (consumer [player]
-                            (.sendBreakAnimation player (.getHand context))))))))))
-            (.playSound world
-                        player
-                        (.getPos context)
-                        SoundsAS/ILLUMINATION_WAND_LIGHT
-                        SoundCategory/BLOCKS
-                        1.0 1.4)
-            (when (.isRemote world)
-              (let [attuned (.getAttunedConstellation ^ConstellationItem (.getItem item) item)
-                    trait (.getTraitConstellation ^ConstellationItem (.getItem item) item)
-                    pos (-> context .getPos Vector3.
-                            (.add (float 0.5)
-                                  (float 1)
-                                  (float 0.5)))]
-                (-> (FXOrbitalCollector. pos ColorsAS/DYE_WHITE)
-                    (.setBranches (inc (+ (if attuned 0 1)
-                                          (if trait 0 1))))
-                    (.setTicksPerRotation 30)
-                    (EffectHelper/spawnSource))
-                (when attuned
-                  (-> (FXOrbitalCollector. pos (.getConstellationColor attuned))
-                      (.setBranches (if trait 1 2))
-                      (.setTicksPerRotation 30)
-                      (.setTickOffset (if trait 10 15))
-                      (EffectHelper/spawnSource)))
-                (when trait
-                  (-> (FXOrbitalCollector. pos (.getConstellationColor trait))
-                      (.setBranches (if attuned 1 2))
-                      (.setTicksPerRotation 30)
-                      (.setTickOffset (if attuned 10 15))
-                      (EffectHelper/spawnSource)))))
-            ActionResultType/SUCCESS)
-          ActionResultType/FAIL))
-      (if (> hook 0)
+            item (.getItem context)
+            it (.iterator (BlockPos/getAllInBoxMutable
+                            (-> (.getPos context)
+                                (.add -1 0 -1))
+                            (-> (.getPos context)
+                                (.add 1 0 1))))]
+        (while (.hasNext it)
+          (let [pos ^BlockPos (.next it)]
+            (when (.isAirBlock world (.up pos))
+              (when-some [new-state
+                          (get HoeItem/HOE_LOOKUP
+                               (-> world (.getBlockState pos) .getBlock))]
+                (when-not (.isRemote world)
+                  (.setBlockState world pos new-state)
+                  (when player
+                    (.damageItem
+                      item 1 player
+                      (consumer [player]
+                        (.sendBreakAnimation player (.getHand context))))))))))
+        (.playSound world
+                    player
+                    (.getPos context)
+                    SoundsAS/ILLUMINATION_WAND_LIGHT
+                    SoundCategory/BLOCKS
+                    1.0 1.4)
+        (when (.isRemote world)
+          (let [attuned (.getAttunedConstellation ^ConstellationItem (.getItem item) item)
+                trait (.getTraitConstellation ^ConstellationItem (.getItem item) item)
+                pos (-> context .getPos Vector3.
+                        (.add (float 0.5)
+                              (float 1)
+                              (float 0.5)))]
+            (-> (FXOrbitalCollector. pos ColorsAS/DYE_WHITE)
+                (.setBranches (inc (+ (if attuned 0 1)
+                                      (if trait 0 1))))
+                (.setTicksPerRotation 30)
+                (EffectHelper/spawnSource))
+            (when attuned
+              (-> (FXOrbitalCollector. pos (.getConstellationColor attuned))
+                  (.setBranches (if trait 1 2))
+                  (.setTicksPerRotation 30)
+                  (.setTickOffset (if trait 10 15))
+                  (EffectHelper/spawnSource)))
+            (when trait
+              (-> (FXOrbitalCollector. pos (.getConstellationColor trait))
+                  (.setBranches (if attuned 1 2))
+                  (.setTicksPerRotation 30)
+                  (.setTickOffset (if attuned 10 15))
+                  (EffectHelper/spawnSource)))))
+        ActionResultType/SUCCESS)
+      (if (>= hook 0)
         ActionResultType/SUCCESS
         ActionResultType/FAIL))))
