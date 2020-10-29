@@ -29,12 +29,12 @@
     (getEnchantability [_] 40)
     (getRepairMaterial [_] Ingredient/EMPTY)))
 
+(def sword* (promise))
+
 (def item-group
   (when-not *compile-files*
     (proxy [ItemGroup] [rf/MODID]
-      (createIcon []
-        (ItemStack. @(ns-resolve 'eutros.starmetallic.item.starmetal-sword
-                                 'starmetal-sword))))))
+      (createIcon [] (ItemStack. @sword*)))))
 
 (def default-properties
   (when-not *compile-files*

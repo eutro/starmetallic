@@ -98,3 +98,5 @@
     (fn [^PlayerInteractEvent$LeftClickEmpty evt]
       (when (check-stack (.getItemStack evt))
         (.sendToServer ^SimpleChannel packets/CHANNEL (PacketBurst.))))))
+
+(deliver cmn/sword* starmetal-sword)
