@@ -63,8 +63,7 @@
             (.spawn (doto pos (MiscUtils/applyRandomOffset random)))
             (.color (nth colors i))
             (.setScaleMultiplier (-> random .nextGaussian Math/abs inc (/ 10)))
-            (.scale VFXScaleFunction/SHRINK)))))
-  (when))
+            (.scale VFXScaleFunction/SHRINK))))))
 
 #_`[fs-init
     fs-registerData

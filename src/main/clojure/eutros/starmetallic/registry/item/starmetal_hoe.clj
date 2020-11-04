@@ -45,8 +45,7 @@
       (setTraitConstellation [stack cst]
         (cmn/set-constellation stack cst cmn/TAG_TRAIT IMinorConstellation))
       (shouldReveal [_stack] true)
-      (onItemUse [context]
-        (hoe-effect context)))))
+      (onItemUse [context] (hoe-effect context)))))
 
 (defn hoe-effect
   [^ItemUseContext context]
@@ -81,13 +80,11 @@
                     1.0 1.4)
         (let [attuned (.getAttunedConstellation ^ConstellationItem (.getItem item) item)
               trait (.getTraitConstellation ^ConstellationItem (.getItem item) item)]
-          (try (.addEntity world
-                           (doto ^Entity (entities/->farmland-sentinel world attuned trait)
-                             (.setPosition (-> ctxPos .getX (+ 0.5))
-                                           (-> ctxPos .getY inc)
-                                           (-> ctxPos .getZ (+ 0.5)))))
-               (catch Exception e
-                 (.printStackTrace e)))
+          (.addEntity world
+                      (doto ^Entity (entities/->farmland-sentinel world attuned trait)
+                        (.setPosition (-> ctxPos .getX (+ 0.5))
+                                      (-> ctxPos .getY inc)
+                                      (-> ctxPos .getZ (+ 0.5)))))
           (when (.isRemote world)
             (let [pos (-> context .getPos Vector3.
                           (.add (float 0.5)
